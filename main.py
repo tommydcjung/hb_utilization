@@ -1,3 +1,9 @@
-import blood_graph_utilization as bg
+import dram_utilization as dr
+import vcache_utilization as vc
 
-bg.parse_blood_graph_stat()
+import os
+import sys
+os.chdir(sys.argv[1])
+
+dr.parse_dram_stat()
+vc.parse_vcache_stat()

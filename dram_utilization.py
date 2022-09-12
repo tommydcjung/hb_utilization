@@ -1,4 +1,4 @@
-class BloodGraphStat:
+class DramStat:
   def __init__(self, timestamp, tag, channel_id, idle, read, write):
     self.timestamp = timestamp
     self.tag = tag
@@ -10,7 +10,7 @@ class BloodGraphStat:
   def get_tag_type(self):
     return (self.tag & 0xc0000000) >> 30
 
-def parse_blood_graph_stat():
+def parse_dram_stat():
   bg_stats = []
   with open("blood_graph_stat.log") as f:
     header = f.readline()
@@ -23,7 +23,7 @@ def parse_blood_graph_stat():
       idle =        int(words[3])
       read =        int(words[4])
       write =       int(words[5])
-      bg_stat = BloodGraphStat(timestamp, tag, channel_id, idle, read, write) 
+      bg_stat = DramStat(timestamp, tag, channel_id, idle, read, write) 
       bg_stats.append(bg_stat)
 
   
