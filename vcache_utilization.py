@@ -26,11 +26,6 @@ def parse_vcache_stat():
 
   # calculate cycles
   total_cycle = (float(end_timestamp - start_timestamp) * NUM_VCACHE)
-  load_cycle = 0
-  store_cycle = 0
-  miss_cycle = 0
-  stall_rsp_cycle = 0
-  
   start_df = df[df["global_ctr"]==start_timestamp]
   end_df   = df[df["global_ctr"]==end_timestamp]
 
