@@ -1,9 +1,10 @@
 class DramStat:
-  def __init__(self, timestamp, tag, channel_id, idle, read, write):
+  def __init__(self, timestamp, tag, channel_id, idle, refresh, read, write):
     self.timestamp = timestamp
     self.tag = tag
     self.channel_id = channel_id
     self.idle = idle
+    self.refresh = refresh
     self.read = read
     self.write = write
 
@@ -21,9 +22,10 @@ def parse_dram_stat():
       tag =         int(words[1])
       channel_id =  int(words[2])
       idle =        int(words[3])
-      read =        int(words[4])
-      write =       int(words[5])
-      bg_stat = DramStat(timestamp, tag, channel_id, idle, read, write) 
+      refresh =     int(words[4])
+      read =        int(words[5])
+      write =       int(words[6])
+      bg_stat = DramStat(timestamp, tag, channel_id, idle, refresh, read, write) 
       bg_stats.append(bg_stat)
 
   
@@ -47,17 +49,18 @@ def parse_dram_stat():
         end_bg_stat = bg_stat
 
 
-
   # calculate utilization
   total_cycle = float(end_timestamp - start_timestamp)
   idle_cycle = float(end_bg_stat.idle - start_bg_stat.idle)
+  refresh_cycle = float(end_bg_stat.refresh - start_bg_stat.refresh)
   read_cycle = float(end_bg_stat.read - start_bg_stat.read)
   write_cycle = float(end_bg_stat.write - start_bg_stat.write)
-  stall_cycle = float(total_cycle - idle_cycle - read_cycle - write_cycle)
+  stall_cycle = float(total_cycle - idle_cycle - read_cycle - write_cycle - refresh_cycle)
   print("--------------------------------")
   print("DRAM Utilization")
   print("--------------------------------")
   print("Idle        = {:.2f} %".format(idle_cycle/total_cycle*100))
+  print("Refresh     = {:.2f} %".format(refresh_cycle/total_cycle*100))
   print("Stall       = {:.2f} %".format(stall_cycle/total_cycle*100))
   print("Read        = {:.2f} %".format(read_cycle/total_cycle*100))
   print("Write       = {:.2f} %".format(write_cycle/total_cycle*100))
