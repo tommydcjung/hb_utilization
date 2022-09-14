@@ -60,7 +60,6 @@ def parse_wh_link_stat():
   print("--------------------------------")
   print("WH Link Utilization")
   print("--------------------------------")
-  print("--------------------------------")
   print("(in)  Idle        = {:.2f} %".format(input_idle_cycle   / total_cycle*100))
   print("(in)  Stall       = {:.2f} %".format(input_stall_cycle  / total_cycle*100))
   print("(out) Idle        = {:.2f} %".format(output_idle_cycle  / total_cycle*100))
