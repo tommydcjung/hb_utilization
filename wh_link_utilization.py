@@ -49,12 +49,12 @@ def parse_wh_link_stat():
   output_stall_cycle = float(sum(end_output_df["stall"]) - sum(start_output_df["stall"]))
   output_util_cycle = total_cycle - output_idle_cycle - output_stall_cycle
  
-  print(end_input_df) 
-  print(start_input_df) 
-  print(total_cycle)
-  print(input_idle_cycle)
-  print(input_stall_cycle)
-  print(input_util_cycle)
+  #print(end_input_df) 
+  #print(start_input_df) 
+  #print(total_cycle)
+  #print(input_idle_cycle)
+  #print(input_stall_cycle)
+  #print(input_util_cycle)
 
   print("")
   print("--------------------------------")
