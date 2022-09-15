@@ -1,4 +1,5 @@
 import pandas as pd
+import router_traffic_visualizer as rtv
 
 POD_ORIGIN_X = 16
 POD_ORIGIN_Y = 8
@@ -150,5 +151,8 @@ def parse_router_stat():
   #print(start_timestamp)
   #print(end_timestamp)
 
-
+  rtv.visualize_router_traffic(fwd_diff_df, "stalled", "fwd_stalled.png")
+  rtv.visualize_router_traffic(fwd_diff_df, "utilized", "fwd_utilized.png")
+  rtv.visualize_router_traffic(rev_diff_df, "stalled", "rev_stalled.png")
+  rtv.visualize_router_traffic(rev_diff_df, "utilized", "rev_utilized.png")
 
