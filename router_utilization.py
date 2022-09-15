@@ -125,7 +125,7 @@ def parse_router_stat():
   rev_diff_df["stalled"] = rev_diff_df.apply(lambda x: float(x.stalled/total_cycle)*100,axis=1)
   rev_diff_df["arbitrated"] = rev_diff_df.apply(lambda x: float(x.arbitrated/total_cycle)*100,axis=1)
 
-  NWORST = 50
+  NWORST = 5
   fwd_most_stalled = fwd_diff_df.sort_values(by = "stalled", ascending=False).head(NWORST)
   fwd_most_utilized = fwd_diff_df.sort_values(by = "utilized", ascending=False).head(NWORST)
   rev_most_stalled = rev_diff_df.sort_values(by = "stalled", ascending=False).head(NWORST)
