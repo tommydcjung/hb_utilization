@@ -110,6 +110,7 @@ module wh_link_profiler
   initial begin
     fd = $fopen("wh_link_stat.csv", "w");
     $fwrite(fd, "global_ctr,tag,EW,pod_y,SN,rf,inout,stall,idle\n");
+    $fflush(fd);
   end
 
   always_ff @ (posedge clk_i) begin
@@ -147,3 +148,19 @@ module wh_link_profiler
 endmodule
 
 `BSG_ABSTRACT_MODULE(wh_link_profiler)
+
+
+  bind bsg_manycore_pod_ruche_array wh_link_profiler  #(
+    .num_pods_y_p(num_pods_y_p)
+    ,.num_pods_x_p(num_pods_x_p)
+    ,.num_vcache_rows_p(num_vcache_rows_p)
+    ,.wh_ruche_factor_p(wh_ruche_factor_p)
+    ,.wh_flit_width_p(wh_flit_width_p)
+    ,.data_width_p(data_width_p)
+  ) wh0 (
+    .*
+    ,.global_ctr_i($root.`HOST_MODULE_PATH.global_ctr)
+    ,.print_stat_v_i($root.`HOST_MODULE_PATH.print_stat_v)
+    ,.print_stat_tag_i($root.`HOST_MODULE_PATH.print_stat_tag)
+  );
+
