@@ -28,23 +28,21 @@ def parse_dram_stat():
   end_df   = df[df["timestamp"]==end_timestamp].iloc[0]
 
   # calculate utilization
-  total_cycle = float(end_timestamp - start_timestamp)
-  refresh_cycle = float(end_df["refresh"] - start_df["refresh"])
+  total_cycle = float(end_timestamp - start_timestamp) - float(end_df["refresh"] - start_df["refresh"])
   busy_cycle = float(end_df["busy"] - start_df["busy"])
   read_cycle = float(end_df["read"] - start_df["read"])
   write_cycle = float(end_df["write"] - start_df["write"])
-  idle_cycle = total_cycle - refresh_cycle - busy_cycle - read_cycle - write_cycle
+  idle_cycle = total_cycle - busy_cycle - read_cycle - write_cycle
 
 
   print("--------------------------------")
   print("DRAM Utilization")
   print("--------------------------------")
-  print("Refresh     = {:.2f} %".format(refresh_cycle/total_cycle*100))
   print("Read        = {:.2f} %".format(2*read_cycle/total_cycle*100))
   print("Write       = {:.2f} %".format(2*write_cycle/total_cycle*100))
   print("Busy        = {:.2f} %".format((busy_cycle-read_cycle-write_cycle)/total_cycle*100))
   print("Idle        = {:.2f} %".format(idle_cycle/total_cycle*100))
   print("--------------------------------")
-  print("Utilization = {:.2f} %".format(2*(read_cycle+write_cycle)/(total_cycle-refresh_cycle)*100))
-  print("Busy cycles = {:.2f} %".format(((read_cycle+write_cycle)+busy_cycle)/(total_cycle-refresh_cycle)*100))
+  print("Utilization = {:.2f} %".format(2*(read_cycle+write_cycle)/total_cycle*100))
+  print("Busy cycles = {:.2f} %".format(((read_cycle+write_cycle)+busy_cycle)/total_cycle*100))
   print("--------------------------------")
