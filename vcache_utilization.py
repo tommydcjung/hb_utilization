@@ -33,21 +33,11 @@ def parse_vcache_stat():
   assert len(start_df["time"]) == NUM_VCACHE
   assert len(end_df["time"]) == NUM_VCACHE
 
-  #print(start_df)
-  #print(end_df)
-  #print(sum(end_df["instr_ld"]))
-  #print(sum(start_df["instr_ld"]))
   load_cycle = float(sum(end_df["instr_ld"]) - sum(start_df["instr_ld"]))
   store_cycle = float(sum(end_df["instr_st"]) - sum(start_df["instr_st"]))
   miss_cycle = float(sum(end_df["stall_miss"]) - sum(start_df["stall_miss"]))
   stall_rsp_cycle = float(sum(end_df["stall_rsp"]) - sum(start_df["stall_rsp"]))
   idle_cycle = total_cycle - load_cycle - store_cycle - miss_cycle - stall_rsp_cycle
-  #print(total_cycle)
-  #print(load_cycle)
-  #print(store_cycle)
-  #print(miss_cycle)
-  #print(stall_rsp_cycle)
-  #print(idle_cycle)
 
   print("")
   print("--------------------------------")
@@ -60,5 +50,6 @@ def parse_vcache_stat():
   print("Stall Rsp   = {:.2f} %".format(stall_rsp_cycle/total_cycle*100))
   print("--------------------------------")
   print("Utilization = {:.2f} %".format((load_cycle+store_cycle)/total_cycle*100))
+  print("Busy cycles = {:.2f} %".format((load_cycle+store_cycle+miss_cycle)/total_cycle*100))
   print("--------------------------------")
   return
