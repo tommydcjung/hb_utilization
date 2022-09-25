@@ -1,8 +1,14 @@
 import pandas as pd
 
+FILENAME = "blood_graph_stat.log"
 
 def parse_dram_stat():
-  df = pd.read_csv("blood_graph_stat.log")
+  try:
+    df = pd.read_csv(FILENAME)
+  except:
+    print("{} not found.".format(FILENAME))
+    return
+
   tags = df["tag"]
   timestamps = df["timestamp"]
 
@@ -38,11 +44,11 @@ def parse_dram_stat():
   print("--------------------------------")
   print("DRAM Utilization")
   print("--------------------------------")
-  print("Read        = {:.2f} %".format(2*read_cycle/total_cycle*100))
-  print("Write       = {:.2f} %".format(2*write_cycle/total_cycle*100))
-  print("Busy        = {:.2f} %".format((busy_cycle-read_cycle-write_cycle)/total_cycle*100))
+  print("Read        = {:.2f} %".format(read_cycle/total_cycle*100))
+  print("Write       = {:.2f} %".format(write_cycle/total_cycle*100))
+  print("Busy        = {:.2f} %".format(busy_cycle/total_cycle*100))
   print("Idle        = {:.2f} %".format(idle_cycle/total_cycle*100))
   print("--------------------------------")
-  print("Utilization = {:.2f} %".format(2*(read_cycle+write_cycle)/total_cycle*100))
+  print("Utilization = {:.2f} %".format((read_cycle+write_cycle)/total_cycle*100))
   print("Busy cycles = {:.2f} %".format(((read_cycle+write_cycle)+busy_cycle)/total_cycle*100))
   print("--------------------------------")

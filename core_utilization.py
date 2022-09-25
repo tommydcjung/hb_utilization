@@ -1,9 +1,15 @@
 import pandas as pd
 
 
+FILENAME = "vanilla_stats.csv"
 
 def parse_vanilla_stat():
-  df = pd.read_csv("vanilla_stats.csv")
+  try:
+    df = pd.read_csv(FILENAME)
+  except:
+    print("{} not found.".format(FILENAME))
+    return
+
   tags = df["tag"]
   timestamps = df["global_ctr"]
   

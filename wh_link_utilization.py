@@ -1,9 +1,15 @@
 import pandas as pd
 
 NUM_WH_LINKS = 8
+FILENAME = "wh_link_stat.csv"
 
 def parse_wh_link_stat():
-  df = pd.read_csv("wh_link_stat.csv")
+  try:
+    df = pd.read_csv(FILENAME)
+  except:
+    print("{} not found.".format(FILENAME))
+    return
+
   tags = df["tag"]
   timestamps = df["global_ctr"]
 

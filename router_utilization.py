@@ -3,6 +3,7 @@ import router_traffic_visualizer as rtv
 
 POD_ORIGIN_X = 16
 POD_ORIGIN_Y = 8
+FILENAME = "router_stat.csv"
 
 def convert_dir(d):
   if d == 0:
@@ -22,8 +23,14 @@ def convert_dir(d):
   else:
     return "X"
 
+
 def parse_router_stat():
-  df = pd.read_csv("router_stat.csv")
+  try:
+    df = pd.read_csv(FILENAME)
+  except:
+    print("{} not found.".format(FILENAME))
+    return
+
   #tags = df["tag"]
   timestamps = df["global_ctr"]
 

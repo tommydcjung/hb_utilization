@@ -1,9 +1,15 @@
 import pandas as pd
 
 NUM_VCACHE = 32
+FILENAME = "vcache_stats.csv"
 
 def parse_vcache_stat():
-  df = pd.read_csv("vcache_stats.csv")
+  try:
+    df = pd.read_csv(FILENAME)
+  except:
+    print("{} not found.".format(FILENAME))
+    return
+
   tags = df["tag"]
   timestamps = df["global_ctr"]
 
