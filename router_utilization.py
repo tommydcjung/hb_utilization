@@ -135,8 +135,10 @@ def parse_router_stat():
   NWORST = 5
   fwd_most_stalled = fwd_diff_df.sort_values(by = "stalled", ascending=False).head(NWORST)
   fwd_most_utilized = fwd_diff_df.sort_values(by = "utilized", ascending=False).head(NWORST)
+  fwd_most_arbitrated = fwd_diff_df.sort_values(by = "arbitrated", ascending=False).head(NWORST)
   rev_most_stalled = rev_diff_df.sort_values(by = "stalled", ascending=False).head(NWORST)
   rev_most_utilized = rev_diff_df.sort_values(by = "utilized", ascending=False).head(NWORST)
+  rev_most_arbitrated = rev_diff_df.sort_values(by = "arbitrated", ascending=False).head(NWORST)
 
   # change float print format
   pd.options.display.float_format = '{:,.2f}'.format
@@ -149,10 +151,14 @@ def parse_router_stat():
   print(fwd_most_stalled)
   print("FWD most utilized:")
   print(fwd_most_utilized)
+  print("FWD most arbitrated:")
+  print(fwd_most_arbitrated)
   print("REV most stalled:")
   print(rev_most_stalled)
   print("REV most utilized:")
   print(rev_most_utilized)
+  print("REV most arbitrated:")
+  print(rev_most_arbitrated)
   print("--------------------------------")
 
   #print(start_timestamp)
