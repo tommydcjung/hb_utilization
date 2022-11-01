@@ -31,13 +31,11 @@ def parse_vcache_stat():
         end_timestamp = timestamp
 
   # calculate cycles
-  total_cycle = (float(end_timestamp - start_timestamp) * NUM_VCACHE)
   start_df = df[df["global_ctr"]==start_timestamp]
   end_df   = df[df["global_ctr"]==end_timestamp]
-
-  # assert that you grabbed correctly.
-  assert len(start_df["time"]) == NUM_VCACHE
-  assert len(end_df["time"]) == NUM_VCACHE
+  assert len(start_df["time"]) == len(end_df["time"])
+  NUM_VCACHE = len(start_df["time"])
+  total_cycle = (float(end_timestamp - start_timestamp) * NUM_VCACHE)
 
   load_cycle = float(sum(end_df["instr_ld"]) - sum(start_df["instr_ld"]))
   store_cycle = float(sum(end_df["instr_st"]) - sum(start_df["instr_st"]))
