@@ -23,6 +23,8 @@ def parse_vanilla_stat():
   stall_cycle = 0
 
   # calculate cycle
+  start_timestamp = (2**32)-1
+  end_timestamp = 0
   for i in range(len(tags)):
     tag = tags[i]
     timestamp = timestamps[i]
@@ -32,6 +34,8 @@ def parse_vanilla_stat():
 
     # kernel start
     if tag_type == 2:
+      if timestamp < start_timestamp:
+        start_timestamp = timestamp
       total_cycle -= timestamp
       instr_cycle -= instr_total
       for col in bubble_cols:
@@ -41,6 +45,8 @@ def parse_vanilla_stat():
       
     # kernel end
     elif tag_type == 3:
+      if timestamp > end_timestamp:
+        end_timestamp = timestamp
       total_cycle += timestamp
       instr_cycle += instr_total
       for col in bubble_cols:
@@ -57,4 +63,6 @@ def parse_vanilla_stat():
   print("Bubble        = {:.2f} %".format(bubble_cycle/total_cycle*100))
   print("--------------------------------")
   print("Utilization   = {:.2f} %".format(instr_cycle/total_cycle*100))
+  print("--------------------------------")
+  print("Runtime       = {} cycles".format(end_timestamp - start_timestamp))
   print("--------------------------------")
