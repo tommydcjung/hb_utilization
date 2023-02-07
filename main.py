@@ -10,9 +10,15 @@ import sys
 
 os.chdir(sys.argv[1])
 
-dr.parse_dram_stat()
-vc.parse_vcache_stat()
-core.parse_vanilla_stat()
-wh.parse_wh_link_stat()
-rtr.parse_router_stat()
-rl.parse_remote_load_stat()
+dram_stat = dr.parse_dram_stat()
+dr.print_dram_stat(dram_stat)
+
+vc_stat = vc.parse_vcache_stat()
+vc.print_vcache_stat(vc_stat)
+
+core_stat = core.parse_vanilla_stat()
+core.print_vanilla_stat(core_stat)
+
+#wh.parse_wh_link_stat()
+#rtr.parse_router_stat()
+#rl.parse_remote_load_stat()

@@ -1,41 +1,11 @@
 import pandas as pd
 
 
-FILENAME = "vanilla_stats.csv"
-
-STALL_LIST = [
-  "stall_depend_dram_load",
-  "stall_depend_group_load",
-  "stall_depend_global_load",
-  "stall_depend_idiv",
-  "stall_depend_fdiv",
-  "stall_depend_local_load",
-  "stall_depend_imul",
-  "stall_amo_aq",
-  "stall_amo_rl",
-  "stall_bypass",
-  "stall_lr_aq",
-  "stall_fence",
-  "stall_remote_req",
-  "stall_remote_credit",
-  "stall_fdiv_busy",
-  "stall_idiv_busy",
-  "stall_barrier",
-  "stall_remote_ld_wb",
-  "stall_ifetch_wait",
-  "stall_remote_flw_wb"
-]
-BUBBLE_LIST = [
-  "bubble_branch_miss",
-  "bubble_jalr_miss",
-  "bubble_icache_miss"
-]
-
-def parse_vanilla_stat():
+def parse_vanilla_stat(filename="vanilla_stats.csv"):
   try:
-    df = pd.read_csv(FILENAME)
+    df = pd.read_csv(filename)
   except:
-    print("{} not found.".format(FILENAME))
+    print("{} not found.".format(filename))
     return
 
   tags = df["tag"]
@@ -94,23 +64,41 @@ def parse_vanilla_stat():
         total_stall_cycle  += df[col][i]
         each_stall_cycle[col]  += df[col][i]
   
+  # build stat dict
+  curr_stat = {}
+  curr_stat["runtime"] = end_timestamp - start_timestamp
+  curr_stat["util_pct"] = instr_cycle/total_cycle*100
+  curr_stat["total_cycle"] = total_cycle
+  curr_stat["total_stall_cycle"] = total_stall_cycle
+  curr_stat["total_bubble_cycle"] = total_bubble_cycle
+  for col in stall_cols:
+    curr_stat[col] = each_stall_cycle[col]
+  for col in bubble_cols:
+    curr_stat[col] = each_bubble_cycle[col]
+
+  return curr_stat
   
+
+def print_vanilla_stat(stat):
   print("")
   print("--------------------------------")
   print("Core Utilization")
 
   print("--------------------------------")
+  keys = list(stat.keys())
+  stall_cols = list(filter(lambda x: x.startswith("stall"), keys))
   for col in stall_cols:
-    print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format(col, each_stall_cycle[col], each_stall_cycle[col]/total_cycle*100, w1=30, w2=12))
-  print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format("Total Stall", total_stall_cycle, total_stall_cycle/total_cycle*100, w1=30, w2=12))
+    print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format(col, stat[col], stat[col]/stat["total_cycle"]*100, w1=30, w2=12))
+  print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format("Total Stall", stat["total_stall_cycle"], stat["total_stall_cycle"]/stat["total_cycle"]*100, w1=30, w2=12))
 
   print("--------------------------------")
+  bubble_cols = list(filter(lambda x: x.startswith("bubble"), keys))
   for col in bubble_cols:
-    print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format(col, each_bubble_cycle[col], each_bubble_cycle[col]/total_cycle*100, w1=30, w2=12))
-  print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format("Total Bubble", total_bubble_cycle, total_bubble_cycle/total_cycle*100, w1=30, w2=12))
+    print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format(col, stat[col], stat[col]/stat["total_cycle"]*100, w1=30, w2=12))
+  print("{:<{w1}} = {:<{w2}} ({:.2f} %)".format("Total Bubble", stat["total_bubble_cycle"], stat["total_bubble_cycle"]/stat["total_cycle"]*100, w1=30, w2=12))
 
   print("--------------------------------")
-  print("Utilization   = {:.2f} %".format(instr_cycle/total_cycle*100))
+  print("Utilization   = {:.2f} %".format(stat["util_pct"]))
   print("--------------------------------")
-  print("Runtime       = {} cycles".format(end_timestamp - start_timestamp))
+  print("Runtime       = {} cycles".format(stat["runtime"]))
   print("--------------------------------")

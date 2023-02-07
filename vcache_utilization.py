@@ -1,13 +1,12 @@
 import pandas as pd
 
 NUM_VCACHE = 32
-FILENAME = "vcache_stats.csv"
 
-def parse_vcache_stat():
+def parse_vcache_stat(filename="vcache_stats.csv"):
   try:
-    df = pd.read_csv(FILENAME)
+    df = pd.read_csv(filename)
   except:
-    print("{} not found.".format(FILENAME))
+    print("{} not found.".format(filename))
     return
 
   tags = df["tag"]
@@ -43,17 +42,28 @@ def parse_vcache_stat():
   stall_rsp_cycle = float(sum(end_df["stall_rsp"]) - sum(start_df["stall_rsp"]))
   idle_cycle = total_cycle - load_cycle - store_cycle - miss_cycle - stall_rsp_cycle
 
+  # vcache stat
+  vcache_stat = {}
+  vcache_stat["total"] = total_cycle
+  vcache_stat["load"] = load_cycle
+  vcache_stat["store"] = store_cycle
+  vcache_stat["miss"] = miss_cycle
+  vcache_stat["stall_rsp"] = stall_rsp_cycle
+  vcache_stat["idle"] = idle_cycle
+  return vcache_stat
+
+def print_vcache_stat(stat):
   print("")
   print("--------------------------------")
   print("Vcache Utilization")
   print("--------------------------------")
-  print("Idle        = {:.2f} %".format(idle_cycle/total_cycle*100))
-  print("Store       = {:.2f} %".format(store_cycle/total_cycle*100))
-  print("Load        = {:.2f} %".format(load_cycle/total_cycle*100))
-  print("Miss        = {:.2f} %".format(miss_cycle/total_cycle*100))
-  print("Stall Rsp   = {:.2f} %".format(stall_rsp_cycle/total_cycle*100))
+  print("Idle        = {:.2f} %".format(stat["idle"]/stat["total"]*100))
+  print("Store       = {:.2f} %".format(stat["store"]/stat["total"]*100))
+  print("Load        = {:.2f} %".format(stat["load"]/stat["total"]*100))
+  print("Miss        = {:.2f} %".format(stat["miss"]/stat["total"]*100))
+  print("Stall Rsp   = {:.2f} %".format(stat["stall_rsp"]/stat["total"]*100))
   print("--------------------------------")
-  print("Utilization = {:.2f} %".format((load_cycle+store_cycle)/total_cycle*100))
-  print("Busy cycles = {:.2f} %".format((load_cycle+store_cycle+miss_cycle)/total_cycle*100))
+  print("Utilization = {:.2f} %".format((stat["store"]+stat["load"])/stat["total"]*100))
+  print("Busy cycles = {:.2f} %".format((stat["store"]+stat["load"]+stat["miss"])/stat["total"]*100))
   print("--------------------------------")
   return

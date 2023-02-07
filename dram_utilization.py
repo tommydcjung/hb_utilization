@@ -1,12 +1,11 @@
 import pandas as pd
 
-FILENAME = "blood_graph_stat.log"
-
-def parse_dram_stat():
+def parse_dram_stat(filename="blood_graph_stat.log"):
+  dram_stat = {}
   try:
-    df = pd.read_csv(FILENAME)
+    df = pd.read_csv(filename)
   except:
-    print("{} not found.".format(FILENAME))
+    print("{} not found.".format(filename))
     return
 
   tags = df["tag"]
@@ -40,15 +39,23 @@ def parse_dram_stat():
   write_cycle = float(end_df["write"] - start_df["write"])
   idle_cycle = total_cycle - busy_cycle - read_cycle - write_cycle
 
+  dram_stat["total"] = total_cycle
+  dram_stat["read"]  = read_cycle
+  dram_stat["write"] = write_cycle
+  dram_stat["busy"]  = busy_cycle
+  dram_stat["idle"]  = idle_cycle
+  return dram_stat
 
+
+def print_dram_stat(stat):
   print("--------------------------------")
   print("DRAM Utilization")
   print("--------------------------------")
-  print("Read        = {:.2f} %".format(read_cycle/total_cycle*100))
-  print("Write       = {:.2f} %".format(write_cycle/total_cycle*100))
-  print("Busy        = {:.2f} %".format(busy_cycle/total_cycle*100))
-  print("Idle        = {:.2f} %".format(idle_cycle/total_cycle*100))
+  print("Read        = {:.2f} %".format(stat["read"]/stat["total"]*100))
+  print("Write       = {:.2f} %".format(stat["write"]/stat["total"]*100))
+  print("Busy        = {:.2f} %".format(stat["busy"]/stat["total"]*100))
+  print("Idle        = {:.2f} %".format(stat["idle"]/stat["total"]*100))
   print("--------------------------------")
-  print("Utilization = {:.2f} %".format((read_cycle+write_cycle)/total_cycle*100))
-  print("Busy cycles = {:.2f} %".format(((read_cycle+write_cycle)+busy_cycle)/total_cycle*100))
+  print("Utilization = {:.2f} %".format((stat["read"]+stat["write"])/stat["total"]*100))
+  print("Non-Idle    = {:.2f} %".format((stat["read"]+stat["write"]+stat["busy"])/stat["total"]*100))
   print("--------------------------------")
