@@ -50,6 +50,8 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
 
   
   # calculate cycle
+  start_count = 0
+  end_count = 0
   start_timestamp = (2**32)-1
   end_timestamp = 0
   for i in range(len(tags)):
@@ -64,6 +66,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
 
     # kernel start
     if tag_type == 2:
+      start_count += 1
       if timestamp < start_timestamp:
         start_timestamp = timestamp
       total_cycle -= timestamp
@@ -80,6 +83,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
       
     # kernel end
     elif tag_type == 3:
+      end_count += 1
       if timestamp > end_timestamp:
         end_timestamp = timestamp
       total_cycle += timestamp
@@ -93,7 +97,11 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
         each_stall_cycle[col]  += df[col][i]
       for col in instr_cols:
         each_instr_cycle[col] += df[col][i]
-  
+
+  if (start_count == 0) or (start_count != end_count):
+    print("warning: vanilla_stat start and end count do not match or exist.")
+    return None
+
   # build stat dict
   curr_stat = {}
   curr_stat["runtime"] = end_timestamp - start_timestamp
