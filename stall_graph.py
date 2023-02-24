@@ -18,12 +18,13 @@ benchmark_paths = {
   "Pagerank": "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
   "BFS": "apps/bfs-single-pod/input_g16k16__start_61526__opt-fwd-ilp-inner_1__opt-mu-ilp-inner_2__opt-rev-pre-outer_4",
   "SpGEMM": "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
+  "memcpy": "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
 }
 
 # plt fig
 fig, ax = plt.subplots()
 PLT_SCALE  = 4.0
-PLT_WIDTH  = 5
+PLT_WIDTH  = 6
 PLT_HEIGHT = 4
 fig.set_size_inches(PLT_SCALE*PLT_WIDTH,PLT_SCALE*PLT_HEIGHT)
 
@@ -92,7 +93,7 @@ bottoms = [0]*num_bench
 xs = list(range(num_bench))
 
 # add empty bar
-plt.bar(x=num_bench,height=0,width=0.1)
+plt.bar(x=num_bench,height=0,width=2)
 
 def add_layer(height, label, color):
   plt.bar(x=xs, height=height, bottom=bottoms, label=label, width=0.4, color=color)
@@ -102,7 +103,7 @@ def add_layer(height, label, color):
 
 add_layer(int_instr_execs, "Int instr", "green")
 add_layer(fp_instr_execs, "FP instr", "lightgreen")
-add_layer(dram_stalls, "DRAM stall", "red")
+add_layer(dram_stalls, "Memory Sys stall", "gold")
 add_layer(network_stalls, "Network stall", "orange")
 add_layer(bypass_stalls, "Bypass stall", "purple")
 add_layer(branch_misses, "Branch miss", "magenta")
@@ -115,13 +116,14 @@ add_layer(barrier_stalls, "Barrier stall", "darkgray")
 
 
 # y axis
-plt.ylabel("Cycle composition", fontsize=16)
+plt.ylabel("Cycle composition", fontsize=22)
 
 # x axis
-plt.xticks(xs, benchmark_paths.keys(), fontsize=16)
+plt.xticks(xs, benchmark_paths.keys(), fontsize=20)
 
 # legend
-plt.legend(loc="upper right")
+plt.legend(loc="upper right", fontsize=22)
 # show
-plt.savefig("stall_graph.svg")
+fig.tight_layout()
+plt.savefig("stall_graph.svg", bbox_inches="tight")
 plt.show()
