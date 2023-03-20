@@ -201,7 +201,7 @@ class CoreBloodGraph:
     floor = cycle0 // self.img_width
     row = floor*(2+(NUM_TILES_X*NUM_TILES_Y)) + (trace["x"]+(trace["y"]*NUM_TILES_X))
 
-    assert(row < self.img_height), "{}, {}".format(row, self.image_height)
+    assert(row <= self.img_height), "{}, {}".format(row, self.img_height)
     # color
     op = trace["operation"]
     if op in self.stall_bubble_color.keys():
