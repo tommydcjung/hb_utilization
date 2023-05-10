@@ -55,20 +55,19 @@ for key in benchmark_paths.keys():
 
 
 
-# plt fig
-fig, ax = plt.subplots(ncols=2)
+# Figure 0: vcache stalls;
+fig0, ax0 = plt.subplots()
 PLT_SCALE  = 4.0
-PLT_WIDTH  = 8
+PLT_WIDTH  = 5
 PLT_HEIGHT = 4
-fig.set_size_inches(PLT_SCALE*PLT_WIDTH,PLT_SCALE*PLT_HEIGHT)
+fig0.set_size_inches(PLT_SCALE*PLT_WIDTH,PLT_SCALE*PLT_HEIGHT)
 
 
-# Vcache stall graph
 vc_bottoms = [0]*num_bench
 xs = list(range(num_bench))
 
 def add_layer_vc(height, label, color):
-  ax[0].bar(x=xs, height=height, bottom=vc_bottoms, label=label, width=0.4, color=color)
+  ax0.bar(x=xs, height=height, bottom=vc_bottoms, label=label, width=0.4, color=color)
   for i in range(num_bench):
     vc_bottoms[i] += height[i]
   return
@@ -78,15 +77,33 @@ add_layer_vc(vc_store, "Store", "lightgreen")
 add_layer_vc(vc_miss, "Miss", "orange")
 add_layer_vc(vc_stall_rsp, "Resp Stall", "purple")
 add_layer_vc(vc_idle, "Idle", "lightgray")
-#ax[0].bar(x=num_bench,height=0,width=1)
+
+# title
+ax0.set_title("Vcache Utilization", fontsize=24)
+# y-axis
+ax0.set_ylabel("Vcache Cycle Composition", fontsize=20)
+# x-axis
+ax0.set_xticks(xs)
+ax0.set_xticklabels(benchmark_paths.keys(), fontsize=20)
+# legend
+ax0.legend(fontsize=20,ncol=5, loc="upper center")
+
+fig0.tight_layout()
+fig0.savefig("vcache_stall.pdf", bbox_inches="tight")
 
 
-# DRAM stall
+
+
+
+# Figure 1: DRAM stall
+fig1, ax1 = plt.subplots()
+fig1.set_size_inches(PLT_SCALE*PLT_WIDTH,PLT_SCALE*PLT_HEIGHT)
+
 dram_bottoms = [0]*num_bench
 xs = list(range(num_bench))
 
 def add_layer_dram(height, label, color):
-  ax[1].bar(x=xs, height=height, bottom=dram_bottoms, label=label, width=0.4, color=color)
+  ax1.bar(x=xs, height=height, bottom=dram_bottoms, label=label, width=0.4, color=color)
   for i in range(num_bench):
     dram_bottoms[i] += height[i]
   return
@@ -95,29 +112,18 @@ add_layer_dram(dram_read, "Read",  "green")
 add_layer_dram(dram_write, "Write", "lightgreen")
 add_layer_dram(dram_busy, "Busy", "orange")
 add_layer_dram(dram_idle, "Idle", "lightgray")
-#ax[1].bar(x=num_bench,height=0,width=1)
 
 # title
-ax[0].set_title("Vcache Utilization", fontsize=24)
-ax[1].set_title("HBM2 Utilization", fontsize=24)
-
+ax1.set_title("HBM2 Utilization", fontsize=24)
 # y axis
-ax[0].set_ylabel("Vcache Cycle Composition", fontsize=20)
-ax[1].set_ylabel("DRAM Cycle Composition", fontsize=20)
-
+ax1.set_ylabel("DRAM Cycle Composition", fontsize=20)
 # x axis
-ax[0].set_xticks(xs)
-ax[0].set_xticklabels(benchmark_paths.keys(), fontsize=20)
-ax[1].set_xticks(xs)
-ax[1].set_xticklabels(benchmark_paths.keys(), fontsize=20)
-
-
+ax1.set_xticks(xs)
+ax1.set_xticklabels(benchmark_paths.keys(), fontsize=20)
 # legend
-ax[0].legend(fontsize=20,ncol=5, loc="upper center")
-ax[1].legend(fontsize=20,ncol=4, loc="upper center")
+ax1.legend(fontsize=20,ncol=4, loc="upper center")
 
-
+fig1.tight_layout()
+fig1.savefig("dram_stall.pdf", bbox_inches="tight")
 # show
-fig.tight_layout()
-fig.savefig("memory_system_stall.pdf")
-plt.show()
+#plt.show()
