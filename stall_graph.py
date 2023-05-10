@@ -45,7 +45,6 @@ for key in benchmark_paths.keys():
   # parse stat
   csv_path = hammerbench_path + "/" + benchmark_paths[key] + "/vanilla_stats.csv"
   stat = parse_vanilla_stat(csv_path)
-  print(key)
   # instr executed
   int_instr_execs.append(stat["non_fp_instr_exec"] / stat["total_cycle"])
   fp_instr_execs.append(stat["fp_instr_exec"] / stat["total_cycle"])
@@ -97,25 +96,35 @@ xs = list(range(num_bench))
 # add empty bar
 plt.bar(x=num_bench,height=0,width=2)
 
-def add_layer(height, label, color):
+
+# Data Frame for csv dump;
+df_cols = ["stall_types"] + list(benchmark_paths.keys())
+df = pd.DataFrame(columns=df_cols)
+
+def add_layer(height, label, color, df):
+  # df for csv;
+  row = [label] + height
+  df.loc[len(df)] = row
+  # bar graph
   plt.bar(x=xs, height=height, bottom=bottoms, label=label, width=0.4, color=color)
   for i in range(num_bench):
     bottoms[i] += height[i]
   return
 
-add_layer(int_instr_execs, "Int instr", "green")
-add_layer(fp_instr_execs, "FP instr", "lightgreen")
-add_layer(dram_stalls, "Memory Sys stall", "gold")
-add_layer(network_stalls, "Network stall", "orange")
-add_layer(bypass_stalls, "Bypass stall", "purple")
-add_layer(branch_misses, "Branch miss", "magenta")
-add_layer(div_stalls, "Div stall", "brown")
-add_layer(icache_misses, "icache miss", "navy")
-add_layer(fence_stalls, "Fence stall", "gray")
-add_layer(barrier_stalls, "Barrier stall", "darkgray")
+add_layer(int_instr_execs, "Int instr", "green", df)
+add_layer(fp_instr_execs, "FP instr", "lightgreen", df)
+add_layer(dram_stalls, "Memory Sys stall", "gold", df)
+add_layer(network_stalls, "Network stall", "orange", df)
+add_layer(bypass_stalls, "Bypass stall", "purple", df)
+add_layer(branch_misses, "Branch miss", "magenta", df)
+add_layer(div_stalls, "Div stall", "brown", df)
+add_layer(icache_misses, "icache miss", "navy", df)
+add_layer(fence_stalls, "Fence stall", "gray", df)
+add_layer(barrier_stalls, "Barrier stall", "darkgray", df)
 
 
-
+# export csv;
+df.to_csv("stall_graph.csv", sep=",")
 
 # y axis
 plt.ylabel("Cycle composition", fontsize=22)
