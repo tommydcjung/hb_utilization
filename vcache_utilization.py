@@ -38,6 +38,9 @@ def parse_vcache_stat(filename="vcache_stats.csv"):
 
   load_cycle = float(sum(end_df["instr_ld"]) - sum(start_df["instr_ld"]))
   store_cycle = float(sum(end_df["instr_st"]) - sum(start_df["instr_st"]))
+  #seq_load_cycle = float(sum(end_df["instr_seq_ld"]) - sum(start_df["instr_seq_ld"]))
+  #seq_store_cycle = float(sum(end_df["instr_seq_st"]) - sum(start_df["instr_seq_st"]))
+
   atomic_cycle = float(sum(end_df["instr_atomic"]) - sum(start_df["instr_atomic"]))  
   miss_cycle = float(sum(end_df["stall_miss"]) - sum(start_df["stall_miss"]))
   stall_rsp_cycle = float(sum(end_df["stall_rsp"]) - sum(start_df["stall_rsp"]))
@@ -48,6 +51,9 @@ def parse_vcache_stat(filename="vcache_stats.csv"):
   vcache_stat["total"] = total_cycle
   vcache_stat["load"] = load_cycle
   vcache_stat["store"] = store_cycle
+  #vcache_stat["seq_load"] = seq_load_cycle
+  vcache_stat["store"] = store_cycle
+  #vcache_stat["seq_store"] = seq_store_cycle
   vcache_stat["atomic"] = atomic_cycle
   vcache_stat["miss"] = miss_cycle
   vcache_stat["stall_rsp"] = stall_rsp_cycle
@@ -59,12 +65,14 @@ def print_vcache_stat(stat):
   print("--------------------------------")
   print("Vcache Utilization")
   print("--------------------------------")
-  print("Idle        = {:.2f} %".format(stat["idle"]/stat["total"]*100))
-  print("Store       = {:.2f} %".format(stat["store"]/stat["total"]*100))
-  print("Load        = {:.2f} %".format(stat["load"]/stat["total"]*100))
-  print("Atomic      = {:.2f} %".format(stat["atomic"]/stat["total"]*100))
-  print("Miss        = {:.2f} %".format(stat["miss"]/stat["total"]*100))
-  print("Stall Rsp   = {:.2f} %".format(stat["stall_rsp"]/stat["total"]*100))
+  print("Idle        = {:.2f} % ({})".format(stat["idle"]/stat["total"]*100, stat["idle"]))
+  print("Store       = {:.2f} % ({})".format(stat["store"]/stat["total"]*100, stat["store"]))
+  #print("Store (seq) = {:.2f} % ({})".format(stat["seq_store"]/stat["total"]*100, stat["seq_store"]))
+  print("Load        = {:.2f} % ({})".format(stat["load"]/stat["total"]*100, stat["load"]))
+  #print("Load  (seq) = {:.2f} % ({})".format(stat["seq_load"]/stat["total"]*100, stat["seq_load"]))
+  print("Atomic      = {:.2f} % ({})".format(stat["atomic"]/stat["total"]*100, stat["atomic"]))
+  print("Miss        = {:.2f} % ({})".format(stat["miss"]/stat["total"]*100, stat["miss"]))
+  print("Stall Rsp   = {:.2f} % ({})".format(stat["stall_rsp"]/stat["total"]*100, stat["stall_rsp"]))
   print("--------------------------------")
   print("Utilization = {:.2f} %".format((stat["store"]+stat["load"])/stat["total"]*100))
   print("Busy cycles = {:.2f} %".format((stat["store"]+stat["load"]+stat["miss"])/stat["total"]*100))
