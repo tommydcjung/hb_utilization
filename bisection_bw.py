@@ -1,6 +1,7 @@
 #
 #   bisection_bw.py
 #
+#   python bisection_bw.py {path_to_hammerbench_hb} {rf_x}
 
 import sys
 import pandas as pd
@@ -9,7 +10,6 @@ POD_ORIGIN_X=16
 POD_ORIGIN_Y=8
 NUM_TILES_X=16
 NUM_TILES_Y=8
-RUCHE_FACTOR_X=3
 
 BENCHMARK_PATHS = {
   "AES"       : "apps/aes/opt-pod",
@@ -46,9 +46,12 @@ def convert_dir(d):
 
 class BisectionBW:
   # constructor;
-  def __init__(self, hbench_path):
+  def __init__(self, hbench_path, rf_x):
     # hammerbench path
     self.hbench_path = hbench_path
+
+    # rf
+    self.rf_x = rf_x
   
     # output df;
     df_cols = ["Network", "Direction", "Stat"] + list(BENCHMARK_PATHS.keys())
@@ -151,7 +154,7 @@ class BisectionBW:
     fwd_hor_idle        += sum(temp_df["idle"])
     fwd_hor_utilized    += sum(temp_df["utilized"])
     fwd_hor_stalled     += sum(temp_df["stalled"])
-    for rf in range(RUCHE_FACTOR_X):
+    for rf in range(self.rf_x):
       temp_df = fwd_end_df[(fwd_end_df["output_dir"] == "RE") & (fwd_end_df["x"] == 7-rf)]
       fwd_hor_idle        += sum(temp_df["idle"])
       fwd_hor_utilized    += sum(temp_df["utilized"])
@@ -169,7 +172,7 @@ class BisectionBW:
     fwd_hor_idle        -= sum(temp_df["idle"])
     fwd_hor_utilized    -= sum(temp_df["utilized"])
     fwd_hor_stalled     -= sum(temp_df["stalled"])
-    for rf in range(RUCHE_FACTOR_X):
+    for rf in range(self.rf_x):
       temp_df = fwd_start_df[(fwd_start_df["output_dir"] == "RE") & (fwd_start_df["x"] == 7-rf)]
       fwd_hor_idle        -= sum(temp_df["idle"])
       fwd_hor_utilized    -= sum(temp_df["utilized"])
@@ -179,9 +182,9 @@ class BisectionBW:
       fwd_hor_utilized    -= sum(temp_df["utilized"])
       fwd_hor_stalled     -= sum(temp_df["stalled"])
          
-    fwd_hor_idle        /= (8*NUM_TILES_Y*total_cycle)
-    fwd_hor_utilized    /= (8*NUM_TILES_Y*total_cycle)
-    fwd_hor_stalled     /= (8*NUM_TILES_Y*total_cycle)
+    fwd_hor_idle        /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
+    fwd_hor_utilized    /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
+    fwd_hor_stalled     /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
 
     self.fwd_hor_idle.append(fwd_hor_idle)
     self.fwd_hor_utilized.append(fwd_hor_utilized)
@@ -221,8 +224,9 @@ class BisectionBW:
 if __name__ == "__main__":
   # arguments;
   hbench_path = sys.argv[1]
+  rf_x = int(sys.argv[2])
 
-  bw = BisectionBW(hbench_path)
+  bw = BisectionBW(hbench_path, rf_x)
   bw.parse()
   bw.dump_csv()
   bw.visualize()
