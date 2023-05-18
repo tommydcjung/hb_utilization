@@ -2,8 +2,8 @@ import dram_utilization as dr
 import vcache_utilization as vc
 import core_utilization as core
 import wh_link_utilization as wh
-import router_utilization as rtr
-import remote_load_stat as rl
+#import router_utilization as rtr
+#import remote_load_stat as rl
 
 import os
 import sys
