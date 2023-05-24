@@ -23,6 +23,8 @@ BENCHMARK_PATHS = {
   "BFS"       : "apps/bfs-single-pod/input_g16k16__start_61526__opt-fwd-ilp-inner_1__opt-mu-ilp-inner_2__opt-rev-pre-outer_4",
   "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
   "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
+  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes",
+  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no",
 }
 
 def convert_dir(d):
@@ -55,17 +57,25 @@ class BisectionBW:
   
     # output df;
     df_cols = ["Network", "Direction", "Stat"] + list(BENCHMARK_PATHS.keys())
-    self.output_df = pd.DataFrame(columns=df_cols)
+    self.fwd_output_df = pd.DataFrame(columns=df_cols)
+    df_cols = ["Network", "Direction", "Stat"] + list(BENCHMARK_PATHS.keys())
+    self.rev_output_df = pd.DataFrame(columns=df_cols)
 
     # vertical  bisection;
     self.fwd_ver_idle       = []
     self.fwd_ver_utilized   = []
     self.fwd_ver_stalled    = []
+    self.rev_ver_idle       = []
+    self.rev_ver_utilized   = []
+    self.rev_ver_stalled    = []
     
     # horizontal bisection
     self.fwd_hor_idle       = []
     self.fwd_hor_utilized   = []
     self.fwd_hor_stalled    = []
+    self.rev_hor_idle       = []
+    self.rev_hor_utilized   = []
+    self.rev_hor_stalled    = []
     return
     
 
@@ -109,6 +119,8 @@ class BisectionBW:
     # separate out start and end;
     fwd_start_df = df[(df["global_ctr"]==start_timestamp) & (df["XY_order"] == 1)]
     fwd_end_df   = df[(df["global_ctr"]==end_timestamp) & (df["XY_order"] == 1)]
+    rev_start_df = df[(df["global_ctr"]==start_timestamp) & (df["XY_order"] == 0)]
+    rev_end_df   = df[(df["global_ctr"]==end_timestamp) & (df["XY_order"] == 0)]
 
     # vertical bisection; (fwd)
     fwd_ver_idle        = 0
@@ -140,6 +152,38 @@ class BisectionBW:
     self.fwd_ver_idle.append(fwd_ver_idle)
     self.fwd_ver_utilized.append(fwd_ver_utilized)
     self.fwd_ver_stalled.append(fwd_ver_stalled)
+
+    # vertical bisection; (rev)
+    rev_ver_idle        = 0
+    rev_ver_utilized    = 0
+    rev_ver_stalled     = 0
+    # end
+    temp_df = rev_end_df[(rev_end_df["output_dir"] == "S") & (rev_end_df["y"] == 3)]
+    rev_ver_idle        += sum(temp_df["idle"])
+    rev_ver_utilized    += sum(temp_df["utilized"])
+    rev_ver_stalled     += sum(temp_df["stalled"])
+    temp_df = rev_end_df[(rev_end_df["output_dir"] == "N") & (rev_end_df["y"] == 4)]
+    rev_ver_idle        += sum(temp_df["idle"])
+    rev_ver_utilized    += sum(temp_df["utilized"])
+    rev_ver_stalled     += sum(temp_df["stalled"])
+    # start
+    temp_df = rev_start_df[(rev_start_df["output_dir"] == "S") & (rev_start_df["y"] == 3)]
+    rev_ver_idle        -= sum(temp_df["idle"])
+    rev_ver_utilized    -= sum(temp_df["utilized"])
+    rev_ver_stalled     -= sum(temp_df["stalled"])
+    temp_df = rev_start_df[(rev_start_df["output_dir"] == "N") & (rev_start_df["y"] == 4)]
+    rev_ver_idle        -= sum(temp_df["idle"])
+    rev_ver_utilized    -= sum(temp_df["utilized"])
+    rev_ver_stalled     -= sum(temp_df["stalled"])
+    
+    rev_ver_idle        /= (2*NUM_TILES_X*total_cycle)
+    rev_ver_utilized    /= (2*NUM_TILES_X*total_cycle)
+    rev_ver_stalled     /= (2*NUM_TILES_X*total_cycle)
+
+    self.rev_ver_idle.append(rev_ver_idle)
+    self.rev_ver_utilized.append(rev_ver_utilized)
+    self.rev_ver_stalled.append(rev_ver_stalled)
+
 
     # horizontal bisection; (fwd)
     fwd_hor_idle        = 0
@@ -189,24 +233,83 @@ class BisectionBW:
     self.fwd_hor_idle.append(fwd_hor_idle)
     self.fwd_hor_utilized.append(fwd_hor_utilized)
     self.fwd_hor_stalled.append(fwd_hor_stalled)
+
+
+    # horizontal bisection; (rev)
+    rev_hor_idle        = 0
+    rev_hor_utilized    = 0
+    rev_hor_stalled     = 0
+    # end
+    temp_df = rev_end_df[(rev_end_df["output_dir"] == "E") & (rev_end_df["x"] == 7)]
+    rev_hor_idle        += sum(temp_df["idle"])
+    rev_hor_utilized    += sum(temp_df["utilized"])
+    rev_hor_stalled     += sum(temp_df["stalled"])
+    temp_df = rev_end_df[(rev_end_df["output_dir"] == "W") & (rev_end_df["x"] == 8)]
+    rev_hor_idle        += sum(temp_df["idle"])
+    rev_hor_utilized    += sum(temp_df["utilized"])
+    rev_hor_stalled     += sum(temp_df["stalled"])
+    for rf in range(self.rf_x):
+      temp_df = rev_end_df[(rev_end_df["output_dir"] == "RE") & (rev_end_df["x"] == 7-rf)]
+      rev_hor_idle        += sum(temp_df["idle"])
+      rev_hor_utilized    += sum(temp_df["utilized"])
+      rev_hor_stalled     += sum(temp_df["stalled"])
+      temp_df = rev_end_df[(rev_end_df["output_dir"] == "RW") & (rev_end_df["x"] == 8+rf)]
+      rev_hor_idle        += sum(temp_df["idle"])
+      rev_hor_utilized    += sum(temp_df["utilized"])
+      rev_hor_stalled     += sum(temp_df["stalled"])
+    # start
+    temp_df = rev_start_df[(rev_start_df["output_dir"] == "E") & (rev_start_df["x"] == 7)]
+    rev_hor_idle        -= sum(temp_df["idle"])
+    rev_hor_utilized    -= sum(temp_df["utilized"])
+    rev_hor_stalled     -= sum(temp_df["stalled"])
+    temp_df = rev_start_df[(rev_start_df["output_dir"] == "W") & (rev_start_df["x"] == 8)]
+    rev_hor_idle        -= sum(temp_df["idle"])
+    rev_hor_utilized    -= sum(temp_df["utilized"])
+    rev_hor_stalled     -= sum(temp_df["stalled"])
+    for rf in range(self.rf_x):
+      temp_df = rev_start_df[(rev_start_df["output_dir"] == "RE") & (rev_start_df["x"] == 7-rf)]
+      rev_hor_idle        -= sum(temp_df["idle"])
+      rev_hor_utilized    -= sum(temp_df["utilized"])
+      rev_hor_stalled     -= sum(temp_df["stalled"])
+      temp_df = rev_start_df[(rev_start_df["output_dir"] == "RW") & (rev_start_df["x"] == 8+rf)]
+      rev_hor_idle        -= sum(temp_df["idle"])
+      rev_hor_utilized    -= sum(temp_df["utilized"])
+      rev_hor_stalled     -= sum(temp_df["stalled"])
+         
+    rev_hor_idle        /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
+    rev_hor_utilized    /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
+    rev_hor_stalled     /= (2*(1+self.rf_x)*NUM_TILES_Y*total_cycle)
+
+    self.rev_hor_idle.append(rev_hor_idle)
+    self.rev_hor_utilized.append(rev_hor_utilized)
+    self.rev_hor_stalled.append(rev_hor_stalled)
     return
 
 
   # add csv row;
-  def add_csv_row(self, network, direction, stat, cols):
+  def add_csv_row(self, df, network, direction, stat, cols):
     row = [network, direction, stat] + cols
-    self.output_df.loc[len(self.output_df)] = row
+    df.loc[len(df)] = row
+    return
 
   # dump csv
   def dump_csv(self):
-    self.add_csv_row("fwd", "ver", "idle", self.fwd_ver_idle)
-    self.add_csv_row("fwd", "ver", "utilized", self.fwd_ver_utilized)
-    self.add_csv_row("fwd", "ver", "stalled", self.fwd_ver_stalled)
-    self.add_csv_row("fwd", "hor", "idle", self.fwd_hor_idle)
-    self.add_csv_row("fwd", "hor", "utilized", self.fwd_hor_utilized)
-    self.add_csv_row("fwd", "hor", "stalled", self.fwd_hor_stalled)
-
-    self.output_df.to_csv("fwd_bisection_bw.csv", sep=",")
+    # fwd df
+    self.add_csv_row(self.fwd_output_df, "fwd", "ver", "idle", self.fwd_ver_idle)
+    self.add_csv_row(self.fwd_output_df, "fwd", "ver", "utilized", self.fwd_ver_utilized)
+    self.add_csv_row(self.fwd_output_df, "fwd", "ver", "stalled", self.fwd_ver_stalled)
+    self.add_csv_row(self.fwd_output_df, "fwd", "hor", "idle", self.fwd_hor_idle)
+    self.add_csv_row(self.fwd_output_df, "fwd", "hor", "utilized", self.fwd_hor_utilized)
+    self.add_csv_row(self.fwd_output_df, "fwd", "hor", "stalled", self.fwd_hor_stalled)
+    self.fwd_output_df.to_csv("fwd_bisection_bw.csv", sep=",")
+    # rev df
+    self.add_csv_row(self.rev_output_df, "rev", "ver", "idle", self.rev_ver_idle)
+    self.add_csv_row(self.rev_output_df, "rev", "ver", "utilized", self.rev_ver_utilized)
+    self.add_csv_row(self.rev_output_df, "rev", "ver", "stalled", self.rev_ver_stalled)
+    self.add_csv_row(self.rev_output_df, "rev", "hor", "idle", self.rev_hor_idle)
+    self.add_csv_row(self.rev_output_df, "rev", "hor", "utilized", self.rev_hor_utilized)
+    self.add_csv_row(self.rev_output_df, "rev", "hor", "stalled", self.rev_hor_stalled)
+    self.rev_output_df.to_csv("rev_bisection_bw.csv", sep=",")
     return
 
 
