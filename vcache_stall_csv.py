@@ -1,10 +1,11 @@
 import sys
 import pandas as pd
-from dram_utilization import *
+from vcache_utilization import *
 
 # arguments
 hammerbench_path = sys.argv[1]
 
+# benchmark paths;
 benchmark_paths = {
   "AES"       : "apps/aes/opt-pod",
   "SW"        : "apps/smith_waterman",
@@ -21,34 +22,42 @@ benchmark_paths = {
   "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no",
 }
 
-busys = []
-reads = []
-writes = []
-idles = []
+# buckets;
+loads       = []
+stores      = []
+atomics     = []
+misses      = []
+stall_rsps  = []
+idles       = []
+
 
 for key in benchmark_paths.keys():
-  # parse stat
-  csv_path = hammerbench_path + "/" + benchmark_paths[key] + "/blood_graph_stat.log"
-  stat = parse_dram_stat(csv_path)
-
-  busys.append(stat["busy"]/stat["total"])
-  reads.append(stat["read"]/stat["total"])
-  writes.append(stat["write"]/stat["total"])
+  # parse vcache stats;
+  csv_path = hammerbench_path + "/" + benchmark_paths[key] + "/vcache_stats.csv"
+  stat = parse_vcache_stat(csv_path)
+  # put metrics in the buckets;
+  loads.append(stat["load"]/stat["total"])
+  stores.append(stat["store"]/stat["total"])
+  atomics.append(stat["atomic"]/stat["total"])
+  misses.append(stat["miss"]/stat["total"])
+  stall_rsps.append(stat["stall_rsp"]/stat["total"])
   idles.append(stat["idle"]/stat["total"])
-  
 
 # empty data frame;
 df_cols = ["Label"] + list(benchmark_paths.keys())
 df = pd.DataFrame(columns=df_cols)
 
+# add rows;
 def add_row(label, cols):
   row = [label] + cols
   df.loc[len(df)] = row
 
-add_row("busy", busys)
-add_row("read", reads)
-add_row("write", writes)
+add_row("load", loads)
+add_row("store", stores)
+add_row("atomic", atomics)
+add_row("miss", misses)
+add_row("stall_rsp", stall_rsps)
 add_row("idle", idles)
 
 # export csv;
-df.to_csv("dram_stall_graph.csv", sep=",")
+df.to_csv("vcache_stall_graph.csv", sep=",")
