@@ -2,6 +2,7 @@
 #   python periodic_stat.py 
 #
 import sys
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -25,19 +26,19 @@ RF_X          = 3
 
 # Benchmarks;
 benchmark_paths = {
-#  "AES"       : "apps/aes/opt-pod",
-#  "SW"        : "apps/smith_waterman",
-#  "BS"        : "apps/blackscholes/opt-pod",
-#  "SGEMM"     : "apps/gemm/sgemm_512/tile-x_16__tile-y_8",
-#  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
-#  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
-#  "BH"        : "apps/barnes_hut",
-#  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
-#  "BFS"       : "apps/bfs-single-pod/input_g16k16__start_61526__opt-fwd-ilp-inner_1__opt-mu-ilp-inner_2__opt-rev-pre-outer_4",
-#  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
-  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_522488__warm-cache_no",
-#  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes",
-#  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no",
+  "AES"       : "apps/aes/opt-pod",
+  "SW"        : "apps/smith_waterman",
+  "BS"        : "apps/blackscholes/opt-pod",
+  "SGEMM"     : "apps/gemm/sgemm_512/tile-x_16__tile-y_8",
+  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
+  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
+  "BH"        : "apps/barnes_hut",
+  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
+  "BFS"       : "apps/bfs-single-pod/input_g16k16__start_61526__opt-fwd-ilp-inner_1__opt-mu-ilp-inner_2__opt-rev-pre-outer_4",
+  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
+  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
+  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes__num-iter_8",
+  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no__num-iter_2",
 }
 
 
@@ -47,12 +48,19 @@ class PeriodicStatVisualizer:
     self.bname = bname
     self.bpath = bpath
     self.find_end_timestamp()
-    return
 
   # visualize
   def visualize(self):
     fig, axs = plt.subplots(NUM_PLOTS_Y,1)
     fig.set_size_inches(PLT_WIDTH,PLT_HEIGHT)
+
+    # load router data
+    df = self.open_csv(self.bpath + "router_periodic_stat.csv")
+    df["x"] = df["x"].subtract(POD_ORIGIN_X)
+    df["y"] = df["y"].subtract(POD_ORIGIN_Y)
+    df["output_dir"] = df.apply(lambda x: self.convert_dir(x.output_dir), axis=1)
+    df = df[(df["x"] >= 0) & (df["x"] < NUM_TILES_X)]
+    self.network_df = df[(df["y"] >= 0) & (df["y"] < NUM_TILES_Y)]
 
     # figure 1: DRAM
     self.plot_dram(fig, axs[0])
@@ -71,8 +79,9 @@ class PeriodicStatVisualizer:
 
     # finish up;
     fig.tight_layout()
-    plt.show()
-    #plt.savefig("periodic_stat_{}.png".format(self.bname), bbox_inches="tight")
+    #plt.savefig("out/periodic_stat_{}.png".format(self.bname), bbox_inches="tight")
+    plt.savefig("out/periodic_stat_{}.pdf".format(self.bname), bbox_inches="tight")
+    #plt.show()
     plt.close()
     return
 
@@ -101,7 +110,7 @@ class PeriodicStatVisualizer:
       read1 = period_df["read"].iloc[i+1]
       write0 = period_df["write"].iloc[i]
       write1 = period_df["write"].iloc[i+1]
-      if x0 < self.dram_end_timestamp:
+      if x1 < self.dram_end_timestamp:
         xs.append((x1+x0)/2)
         y_ref = (ref1 - ref0) / DRAM_PERIOD * 100
         y_read = (read1 - read0) / DRAM_PERIOD * 100
@@ -120,7 +129,7 @@ class PeriodicStatVisualizer:
     ax.stackplot(xs, ys_ref, ys_read, ys_write, ys_busy, ys_idle, labels=labels, colors=colors)
     ax.set_xticks([])
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
-    ax.set_title("DRAM utilization")
+    ax.set_title("DRAM utilization ({})".format(self.bname))
     return
 
   # Plot vcache
@@ -150,7 +159,7 @@ class PeriodicStatVisualizer:
     for i in range(len(ts)-1):
       t0 = ts[i]
       t1 = ts[i+1]
-      if t0 < self.end_timestamp:
+      if t1 < self.end_timestamp:
         xs.append((t1+t0)/2)
         y_load = (groupby_load[t1] - groupby_load[t0]) / (VCACHE_PERIOD * NUM_VCACHE) * 100
         y_store = (groupby_store[t1] - groupby_store[t0]) / (VCACHE_PERIOD * NUM_VCACHE) * 100
@@ -170,7 +179,7 @@ class PeriodicStatVisualizer:
 
     ax.stackplot(xs, ys_load, ys_store, ys_miss, ys_atomic, ys_stall_rsp, ys_idle, labels=labels, colors=colors)
     ax.set_xticks([])
-    ax.set_title("Vcache utilization")
+    ax.set_title("Vcache utilization ({})".format(self.bname))
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     return
 
@@ -229,7 +238,7 @@ class PeriodicStatVisualizer:
     for i in range(len(ts)-1):
       t0 = ts[i]
       t1 = ts[i+1]
-      if t0 < self.end_timestamp:
+      if t1 < self.end_timestamp:
         xs.append((t0+t1)/2)
         # fp exec
         y_fp_exec = 0
@@ -322,7 +331,8 @@ class PeriodicStatVisualizer:
 
         # barrier stall
         BARRIER_STALL_COLS = [
-          "stall_barrier"
+          "stall_barrier",
+          "stall_lr_aq"
         ]
         y_barrier_stall = 0
         for col in BARRIER_STALL_COLS:
@@ -336,10 +346,10 @@ class PeriodicStatVisualizer:
               "magenta", "brown", "navy", "gray", "darkgray"]
     ax.stackplot(xs,
       ys_int_exec, ys_fp_exec, ys_dram_stall, ys_network_stall, ys_bypass_stall,
-      ys_branch_miss, ys_icache_miss, ys_div_stall, ys_fence_stall, ys_barrier_stall,
+      ys_branch_miss, ys_div_stall, ys_icache_miss, ys_fence_stall, ys_barrier_stall,
       labels=labels, colors=colors)
     ax.set_xticks([])
-    ax.set_title("Core utilization")
+    ax.set_title("Core utilization ({})".format(self.bname))
     ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
     return
 
@@ -352,8 +362,8 @@ class PeriodicStatVisualizer:
         cond |=  (df["output_dir"] == "RE") & (df["x"] == ((NUM_TILES_X/2)-1-i))
         cond |= (df["output_dir"] == "RW") & (df["x"] == ((NUM_TILES_X/2)+i))
       return df[cond]
-      
-    self.plot_router_util(fig, ax, 1, cond, "Network FWD Horizontal")
+    denom = 2*NUM_TILES_Y*(1+RF_X)*ROUTER_PERIOD / 100
+    self.plot_router_util(fig, ax, 1, cond, "Network FWD Horizontal ({})".format(self.bname), denom)
     return
 
 
@@ -364,7 +374,8 @@ class PeriodicStatVisualizer:
       cond |= (df["output_dir"] == "N") & (df["y"] == ((NUM_TILES_Y/2)))
       return df[cond]
 
-    self.plot_router_util(fig, ax, 1, cond, "Network FWD Vertical")
+    denom = 2 * NUM_TILES_X*ROUTER_PERIOD / 100
+    self.plot_router_util(fig, ax, 1, cond, "Network FWD Vertical ({})".format(self.bname), denom)
     return
 
   # network rev hor;
@@ -377,7 +388,8 @@ class PeriodicStatVisualizer:
         cond |= (df["output_dir"] == "RW") & (df["x"] == ((NUM_TILES_X/2)+i))
       return df[cond]
       
-    self.plot_router_util(fig, ax, 0, cond, "Network Rev Horizontal")
+    denom = 2*NUM_TILES_Y * (1+RF_X)*ROUTER_PERIOD / 100
+    self.plot_router_util(fig, ax, 0, cond, "Network Rev Horizontal ({})".format(self.bname), denom)
     return
 
   # network rev ver;
@@ -387,7 +399,8 @@ class PeriodicStatVisualizer:
       cond |= (df["output_dir"] == "N") & (df["y"] == ((NUM_TILES_Y/2)))
       return df[cond]
 
-    self.plot_router_util(fig, ax, 0, cond, "Network Rev Vertical")
+    denom = 2 * NUM_TILES_X*ROUTER_PERIOD / 100
+    self.plot_router_util(fig, ax, 0, cond, "Network Rev Vertical ({})".format(self.bname), denom)
     return
 
 
@@ -448,14 +461,8 @@ class PeriodicStatVisualizer:
     return dir_map[d]
 
   # plot router util;
-  def plot_router_util(self, fig, ax, XY_order, cond, title):
-    df = self.open_csv(self.bpath + "router_periodic_stat.csv")
-    df["x"] = df["x"].subtract(POD_ORIGIN_X)
-    df["y"] = df["y"].subtract(POD_ORIGIN_Y)
-    df["output_dir"] = df.apply(lambda x: self.convert_dir(x.output_dir), axis=1)
-    df = df[(df["x"] >= 0) & (df["x"] < NUM_TILES_X)]
-    df = df[(df["y"] >= 0) & (df["y"] < NUM_TILES_Y)]
-    df = df[df["XY_order"] == XY_order]
+  def plot_router_util(self, fig, ax, XY_order, cond, title, denom):
+    df = self.network_df[self.network_df["XY_order"] == XY_order]
     # filter condition
     df = cond(df)
     # groupby
@@ -474,11 +481,11 @@ class PeriodicStatVisualizer:
     for i in range(len(ts)-1):
       t0 = ts[i]
       t1 = ts[i+1]
-      if t0 < self.end_timestamp:
+      if t1 < self.end_timestamp:
         xs.append((t0+t1)/2)
-        y_utilized = (group_utilized[t1] - group_utilized[t0]) / (ROUTER_PERIOD * NUM_TILES_X * (RF_X+1)) * 100
-        y_stalled = (group_stalled[t1] - group_stalled[t0]) / (ROUTER_PERIOD * NUM_TILES_X * (RF_X+1)) * 100
-        y_idle = (group_idle[t1] - group_idle[t0]) / (ROUTER_PERIOD * NUM_TILES_X * (RF_X+1)) * 100
+        y_utilized = (group_utilized[t1] - group_utilized[t0]) / denom
+        y_stalled = (group_stalled[t1] - group_stalled[t0]) / denom
+        y_idle = (group_idle[t1] - group_idle[t0]) / denom
         ys_utilized.append(y_utilized)
         ys_stalled.append(y_stalled)
         ys_idle.append(y_idle)
@@ -494,6 +501,11 @@ class PeriodicStatVisualizer:
 if __name__ == "__main__":
   # arguments;
   hammerbench_path = sys.argv[1]
+
+  # output dir
+  if not os.path.isdir("out/"):
+    os.makedirs("out/")
+
   # visualize each benchmark;
   for key in benchmark_paths.keys():
     bpath = hammerbench_path + "/" + benchmark_paths[key] + "/"
