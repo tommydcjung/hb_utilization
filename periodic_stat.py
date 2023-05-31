@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Plot dimension;
-NUM_PLOTS_Y = 7
+NUM_PLOTS_Y = 8
 PLT_SCALE = 0.5
 PLT_WIDTH  = 28 * PLT_SCALE
 PLT_HEIGHT = 4.5 * NUM_PLOTS_Y * PLT_SCALE
@@ -73,9 +73,10 @@ class PeriodicStatVisualizer:
     self.plot_network_fwd_ver(fig, axs[3])
     self.plot_network_rev_ver(fig, axs[4])
     self.plot_network_rev_hor(fig, axs[5])
+    self.plot_network_tile_vcache(fig, axs[6])
 
     # figure 7: core util
-    self.plot_core(fig, axs[6])
+    self.plot_core(fig, axs[7])
 
     # finish up;
     fig.tight_layout()
@@ -403,6 +404,16 @@ class PeriodicStatVisualizer:
     self.plot_router_util(fig, ax, 0, cond, "Network Rev Vertical ({})".format(self.bname), denom)
     return
 
+  # network tile vcache;
+  def plot_network_tile_vcache(self, fig, ax):
+    def cond(df):
+      cond =  (df["output_dir"] == "N") & (df["y"] == 0)
+      cond |= (df["output_dir"] == "S") & (df["y"] == (NUM_TILES_Y-1))
+      return df[cond]
+
+    denom = 2*NUM_TILES_X*ROUTER_PERIOD / 100
+    self.plot_router_util(fig, ax, 1, cond, "Network tile-vcache ({})".format(self.bname), denom)
+    return
 
   #                     #
   #   HELPER ROUTINES   #
