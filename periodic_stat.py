@@ -62,21 +62,23 @@ class PeriodicStatVisualizer:
     df = df[(df["x"] >= 0) & (df["x"] < NUM_TILES_X)]
     self.network_df = df[(df["y"] >= 0) & (df["y"] < NUM_TILES_Y)]
 
-    # figure 1: DRAM
-    self.plot_dram(fig, axs[0])
 
-    # figure 2: vcache
+    # figure : core util
+    self.plot_core(fig, axs[0])
+
+    # figure : vcache
     self.plot_vcache(fig, axs[1])
 
-    # figure 3-6: network
-    self.plot_network_fwd_hor(fig, axs[2])
-    self.plot_network_fwd_ver(fig, axs[3])
-    self.plot_network_rev_ver(fig, axs[4])
-    self.plot_network_rev_hor(fig, axs[5])
-    self.plot_network_tile_vcache(fig, axs[6])
+    # figure : DRAM
+    self.plot_dram(fig, axs[2])
 
-    # figure 7: core util
-    self.plot_core(fig, axs[7])
+    # figure : network
+    self.plot_network_tile_vcache(fig, axs[3])
+    self.plot_network_fwd_hor(fig, axs[4])
+    self.plot_network_fwd_ver(fig, axs[5])
+    self.plot_network_rev_hor(fig, axs[6])
+    self.plot_network_rev_ver(fig, axs[7])
+
 
     # finish up;
     fig.tight_layout()
@@ -127,7 +129,7 @@ class PeriodicStatVisualizer:
     # stackplot
     labels = ["refresh", "read", "write", "busy", "idle"]
     colors = ["black", "green", "lightgreen", "orange", "gray"]
-    ax.stackplot(xs, ys_ref, ys_read, ys_write, ys_busy, ys_idle, labels=labels, colors=colors)
+    ax.stackplot(xs, ys_ref, ys_read, ys_write, ys_busy, ys_idle, labels=labels, colors=colors, step="post")
     ax.set_xticks([])
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     ax.set_title("DRAM utilization ({})".format(self.bname))
@@ -178,7 +180,7 @@ class PeriodicStatVisualizer:
     labels = ["Load", "Store", "miss", "atomic", "resp stall", "Idle"]
     colors = ["green", "lightgreen", "orange", "brown", "purple", "gray"]
 
-    ax.stackplot(xs, ys_load, ys_store, ys_miss, ys_atomic, ys_stall_rsp, ys_idle, labels=labels, colors=colors)
+    ax.stackplot(xs, ys_load, ys_store, ys_miss, ys_atomic, ys_stall_rsp, ys_idle, labels=labels, colors=colors, step="post")
     ax.set_xticks([])
     ax.set_title("Vcache utilization ({})".format(self.bname))
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
@@ -348,7 +350,7 @@ class PeriodicStatVisualizer:
     ax.stackplot(xs,
       ys_int_exec, ys_fp_exec, ys_dram_stall, ys_network_stall, ys_bypass_stall,
       ys_branch_miss, ys_div_stall, ys_icache_miss, ys_fence_stall, ys_barrier_stall,
-      labels=labels, colors=colors)
+      labels=labels, colors=colors, step="post")
     ax.set_xticks([])
     ax.set_title("Core utilization ({})".format(self.bname))
     ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
@@ -503,7 +505,7 @@ class PeriodicStatVisualizer:
     # stackplot
     labels = ["utilized", "stalled", "idle"]
     colors = ["green", "yellow", "gray"]
-    ax.stackplot(xs, ys_utilized, ys_stalled, ys_idle, labels=labels, colors=colors)
+    ax.stackplot(xs, ys_utilized, ys_stalled, ys_idle, labels=labels, colors=colors, step="post")
     ax.set_xticks([])
     ax.set_title(title)
     ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.23))
@@ -519,6 +521,7 @@ if __name__ == "__main__":
 
   # visualize each benchmark;
   for key in benchmark_paths.keys():
+    print(key)
     bpath = hammerbench_path + "/" + benchmark_paths[key] + "/"
     vis = PeriodicStatVisualizer(key, bpath) 
     vis.visualize()
