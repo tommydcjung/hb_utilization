@@ -26,19 +26,19 @@ RF_X          = 3
 
 # Benchmarks;
 benchmark_paths = {
-  "AES"       : "apps/aes/opt-pod",
-  "SW"        : "apps/smith_waterman",
-  "BS"        : "apps/blackscholes/opt-pod",
-  "SGEMM"     : "apps/gemm/sgemm_512/tile-x_16__tile-y_8",
-  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
-  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
-  "BH"        : "apps/barnes_hut",
-  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
-  "BFS"       : "apps/bfs-single-pod/input_g16k16__start_61526__opt-fwd-ilp-inner_1__opt-mu-ilp-inner_2__opt-rev-pre-outer_4",
-  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
-  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
-  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes__num-iter_8",
-  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no__num-iter_2",
+#  "AES"       : "apps/aes/opt-pod",
+#  "SW"        : "apps/smith_waterman",
+#  "BS"        : "apps/blackscholes/opt-pod",
+#  "SGEMM"     : "apps/gemm/sgemm_512/tile-x_16__tile-y_8",
+#  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
+#  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
+#  "BH"        : "apps/barnes_hut",
+#  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
+   "BFS"       : "apps/bfs-opt/input_g16k16__start_61526",
+#  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
+#  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
+#  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes__num-iter_8",
+#  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no__num-iter_2",
 }
 
 
@@ -130,7 +130,8 @@ class PeriodicStatVisualizer:
     labels = ["refresh", "read", "write", "busy", "idle"]
     colors = ["black", "green", "lightgreen", "orange", "gray"]
     ax.stackplot(xs, ys_ref, ys_read, ys_write, ys_busy, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
+    ax.set_xticks([xs[-1]])
+    ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     ax.set_title("DRAM utilization ({})".format(self.bname))
     return
@@ -181,7 +182,8 @@ class PeriodicStatVisualizer:
     colors = ["green", "lightgreen", "orange", "brown", "purple", "gray"]
 
     ax.stackplot(xs, ys_load, ys_store, ys_miss, ys_atomic, ys_stall_rsp, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
+    ax.set_xticks([xs[-1]])
+    ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Vcache utilization ({})".format(self.bname))
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     return
@@ -343,7 +345,7 @@ class PeriodicStatVisualizer:
         ys_barrier_stall.append(y_barrier_stall/ DENOM)
 
     # stack plot
-    labels = ["Int Instr", "FP Instr", "DRAM stall", "Network stall", "Bypass stall",
+    labels = ["Int Instr", "FP Instr", "VC Load stall", "Network stall", "Bypass stall",
             "Branch miss", "Div stall", "icache miss", "Fence stall", "Barrier stall"]
     colors = ["green", "lightgreen", "gold", "orange", "purple",
               "magenta", "brown", "navy", "gray", "darkgray"]
@@ -351,7 +353,8 @@ class PeriodicStatVisualizer:
       ys_int_exec, ys_fp_exec, ys_dram_stall, ys_network_stall, ys_bypass_stall,
       ys_branch_miss, ys_div_stall, ys_icache_miss, ys_fence_stall, ys_barrier_stall,
       labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
+    ax.set_xticks([xs[-1]])
+    ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Core utilization ({})".format(self.bname))
     ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
     return
