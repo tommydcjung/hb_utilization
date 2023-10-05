@@ -20,7 +20,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
     df = pd.read_csv(filename)
   except:
     print("{} not found.".format(filename))
-    return
+    return None
 
   tags = df["tag"]
   timestamps = df["global_ctr"]
@@ -99,7 +99,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
         each_instr_cycle[col] += df[col][i]
 
   if (start_count == 0) or (start_count != end_count):
-    print("warning: vanilla_stat start and end count do not match or exist.")
+    print("Error: vanilla_stat start and end count do not match or exist.", start_count, end_count)
     return None
 
   # build stat dict
