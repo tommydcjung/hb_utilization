@@ -26,19 +26,20 @@ RF_X          = 3
 
 # Benchmarks;
 benchmark_paths = {
-  "AES"       : "apps/aes/opt-pod",
-  "SW"        : "apps/smith_waterman",
-  "BS"        : "apps/blackscholes/opt-pod",
-  "SGEMM"     : "apps/gemm/sgemm_512/tile-x_16__tile-y_8",
-  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
-  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
-  "BH"        : "apps/barnes_hut",
-  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
-  "BFS"       : "apps/bfs-edge-parallel/input_g16k16__start_61526",
-  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
-  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
-  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes__num-iter_8",
-  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no__num-iter_2",
+#  "AES"       : "apps/aes/opt-pod",
+#  "SW"        : "apps/smith_waterman",
+#  "BS"        : "apps/blackscholes/opt-pod",
+#  "SGEMM"     : "apps/gemm/sgemm_512_tensor/tile-x_16__tile-y_8",
+  "SGEMM"     : "apps/gemm/sgemm_batched_16x16/tile-x_16__tile-y_8__batch_1024",
+#  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
+#  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
+#  "BH"        : "apps/barnes_hut",
+#  "Pagerank"  : "apps/pagerank/direction_pull__fn_pagerank_pull_u8__graph_wiki-Vote__pod-id_0__npods_1",
+#  "BFS"       : "apps/bfs-edge-parallel/input_g16k16__start_61526",
+#  "SpGEMM"    : "apps/spgemm/spmm_abrev_multi_pod_model/u12k2_input__1_partfactor__0x0_partition__yes_opt__yes_parallel",
+#  "memcpy"    : "apps/memcpy/tile-x_16__tile-y_8__buffer-size_524288__warm-cache_no",
+#  "gups_vcache"  : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_1024__warm-cache_yes__num-iter_8",
+#  "gups_dram"    : "apps/gups_rmw/tile-x_16__tile-y_8__A-size_67108864__warm-cache_no__num-iter_2",
 }
 
 

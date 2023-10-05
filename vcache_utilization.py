@@ -7,7 +7,7 @@ def parse_vcache_stat(filename="vcache_stats.csv"):
     df = pd.read_csv(filename)
   except:
     print("{} not found.".format(filename))
-    return
+    return None
 
   tags = df["tag"]
   timestamps = df["global_ctr"]
