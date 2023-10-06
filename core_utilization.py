@@ -157,3 +157,55 @@ def print_vanilla_stat(stat):
   print("--------------------------------")
   print("Runtime       = {} cycles".format(stat["runtime"]))
   print("--------------------------------")
+
+
+
+def summarize_core_stall(stat):
+  # Instr exec;
+  int_instr_exec = stat["non_fp_instr_exec"]
+  fp_instr_exec = stat["fp_instr_exec"]
+  # DRAM stall;
+  dram_stall = stat["stall_depend_dram_load"]
+  dram_stall += stat["stall_depend_dram_seq_load"]
+  dram_stall += stat["stall_depend_dram_amo"]
+  dram_stall += stat["stall_amo_aq"]
+  dram_stall += stat["stall_amo_rl"]
+  # network stall;
+  network_stall = stat["stall_remote_req"]
+  network_stall += stat["stall_remote_ld_wb"]
+  network_stall += stat["stall_remote_flw_wb"]
+  network_stall += stat["stall_remote_credit"]
+  network_stall += stat["stall_depend_group_load"]
+  # bypass
+  bypass_stall = stat["stall_depend_local_load"]
+  bypass_stall += stat["stall_depend_imul"]
+  bypass_stall += stat["stall_bypass"]
+  # branch miss
+  branch_miss = stat["bubble_branch_miss"]
+  branch_miss += stat["bubble_jalr_miss"]
+  # div stall
+  div_stall = stat["stall_depend_fdiv"]
+  div_stall += stat["stall_fdiv_busy"]
+  div_stall += stat["stall_idiv_busy"]
+  # fence stall
+  fence_stall = stat["stall_fence"]
+  # barrier stall
+  barrier_stall = stat["stall_barrier"]
+  # icache miss
+  icache_miss = stat["stall_ifetch_wait"]
+  icache_miss += stat["bubble_icache_miss"]
+
+  print("Stall Summary")
+  print("IntInstrExec    = {:.2f} %".format(100*int_instr_exec/stat["total_cycle"]))
+  print("FPInstrExec     = {:.2f} %".format(100*fp_instr_exec/stat["total_cycle"]))
+  print("MemorySysStall  = {:.2f} %".format(100*dram_stall/stat["total_cycle"]))
+  print("NetworkStall    = {:.2f} %".format(100*network_stall/stat["total_cycle"]))
+  print("BypassStall     = {:.2f} %".format(100*bypass_stall/stat["total_cycle"]))
+  print("BranceMiss      = {:.2f} %".format(100*branch_miss/stat["total_cycle"]))
+  print("DivStall        = {:.2f} %".format(100*div_stall/stat["total_cycle"]))
+  print("FenceStall      = {:.2f} %".format(100*fence_stall/stat["total_cycle"]))
+  print("BarrierStall    = {:.2f} %".format(100*barrier_stall/stat["total_cycle"]))
+  if icache_miss != 0:
+    print("icacheMiss      = {:.2f} %".format(100*icache_miss/stat["total_cycle"]))
+  
+

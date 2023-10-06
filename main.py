@@ -19,6 +19,7 @@ if vc_stat is not None:
 
 core_stat = core.parse_vanilla_stat()
 core.print_vanilla_stat(core_stat)
+core.summarize_core_stall(core_stat)
 
 #wh.parse_wh_link_stat()
 #rtr.parse_router_stat()
