@@ -135,7 +135,7 @@ class BisectionBW:
 # main function;
 if __name__ == "__main__":
   # arguments;
-  csvpath = sys.argv[1]
+  csvpath = sys.argv[1] + "router_stat.csv"
   rf_x = int(sys.argv[2])
   num_tiles_x = int(sys.argv[3])
   num_tiles_y = int(sys.argv[4])
