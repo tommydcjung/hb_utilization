@@ -46,6 +46,12 @@ def parse_vcache_stat(filename="vcache_stats.csv"):
   stall_rsp_cycle = float(sum(end_df["stall_rsp"]) - sum(start_df["stall_rsp"]))
   idle_cycle = total_cycle - load_cycle - store_cycle - atomic_cycle - miss_cycle - stall_rsp_cycle
 
+  # Miss rate;
+  total_miss = sum(end_df["miss_ld"]) - sum(start_df["miss_ld"])
+  total_miss += sum(end_df["miss_st"]) - sum(start_df["miss_st"])
+  total_miss += sum(end_df["miss_amo"]) - sum(start_df["miss_amo"])
+  total_miss = float(total_miss)
+
   # vcache stat
   vcache_stat = {}
   vcache_stat["total"] = total_cycle
@@ -58,6 +64,7 @@ def parse_vcache_stat(filename="vcache_stats.csv"):
   vcache_stat["miss"] = miss_cycle
   vcache_stat["stall_rsp"] = stall_rsp_cycle
   vcache_stat["idle"] = idle_cycle
+  vcache_stat["miss_rate"] = total_miss / (load_cycle + store_cycle + atomic_cycle) * 100
   return vcache_stat
 
 def print_vcache_stat(stat):
@@ -73,6 +80,8 @@ def print_vcache_stat(stat):
   print("Atomic      = {:.2f} % ({})".format(stat["atomic"]/stat["total"]*100, stat["atomic"]))
   print("Miss        = {:.2f} % ({})".format(stat["miss"]/stat["total"]*100, stat["miss"]))
   print("Stall Rsp   = {:.2f} % ({})".format(stat["stall_rsp"]/stat["total"]*100, stat["stall_rsp"]))
+  print("--------------------------------")
+  print("Miss Rate   = {:.2f} %".format(stat["miss_rate"]))
   print("--------------------------------")
   print("Utilization = {:.2f} %".format((stat["store"]+stat["load"])/stat["total"]*100))
   print("Busy cycles = {:.2f} %".format((stat["store"]+stat["load"]+stat["miss"])/stat["total"]*100))
