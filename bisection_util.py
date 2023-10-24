@@ -125,9 +125,16 @@ class BisectionBW:
     fwd_hor_utilized *= 100
     fwd_hor_stalled *= 100
     
-    print("utilized: {:.2f}".format(fwd_hor_utilized))
-    print("idle:     {:.2f}".format(fwd_hor_idle))
-    print("stalled:  {:.2f}".format(fwd_hor_stalled))
+    stat = {}
+    stat["utilized"] = fwd_hor_utilized
+    stat["idle"]     = fwd_hor_idle
+    stat["stalled"]  = fwd_hor_stalled
+    return stat
+
+  def summarize_stat(self, stat):
+    print("utilized: {:.2f}".format(stat["utilized"]))
+    print("idle:     {:.2f}".format(stat["idle"]))
+    print("stalled:  {:.2f}".format(stat["stalled"]))
     return
 
 
@@ -142,4 +149,5 @@ if __name__ == "__main__":
   num_pods_x = int(sys.argv[5])
 
   bw = BisectionBW(csvpath, rf_x, num_tiles_x, num_tiles_y, num_pods_x)
-  bw.parse()
+  stat = bw.parse()
+  bw.summarize_stat(stat)
