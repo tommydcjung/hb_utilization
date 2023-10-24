@@ -118,9 +118,9 @@ class BisectionBW:
         fwd_hor_stalled     -= sum(temp_df["stalled"])
   
     # divide by total cycle       
-    fwd_hor_idle        /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle)
-    fwd_hor_utilized    /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle)
-    fwd_hor_stalled     /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle)
+    fwd_hor_idle        /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle*self.num_pods_x)
+    fwd_hor_utilized    /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle*self.num_pods_x)
+    fwd_hor_stalled     /= (2*(1+self.rf_x)*self.num_tiles_y*total_cycle*self.num_pods_x)
     fwd_hor_idle *= 100
     fwd_hor_utilized *= 100
     fwd_hor_stalled *= 100
