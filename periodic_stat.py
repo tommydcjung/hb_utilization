@@ -30,7 +30,7 @@ benchmark_paths = {
 #  "SW"        : "apps/smith_waterman",
 #  "BS"        : "apps/blackscholes/opt-pod",
 #  "SGEMM"     : "apps/gemm/sgemm_512_tensor/tile-x_16__tile-y_8",
-  "SGEMM"     : "apps/gemm/sgemm_batched_16x16/tile-x_16__tile-y_8__batch_1024",
+  "SGEMM"     : "apps/multipod/sgemm/N_512__NITER_1",
 #  "FFT"       : "apps/fft/256/tile-x_16__tile-y_8__num-iter_2__warm-cache_no",
 #  "Jacobi"    : "apps/jacobi/nx_32__ny_16__nz_512__num-iter_1__warm-cache_no",
 #  "BH"        : "apps/barnes_hut",
