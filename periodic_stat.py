@@ -1,5 +1,18 @@
 #
+#   periodic_stat.py 
+#
+#   How to use:
 #   python periodic_stat.py {path_to_test_dir}
+#
+#   Make sure that you have the following files in the test dir;
+#   - router_periodic_stat.csv 
+#   - blood_graph_periodic_stat.csv 
+#   - vcache_periodic_stat.csv 
+#   - vanilla_periodic_stat.csv
+#   - blood_graph_stat.log
+#   - vcache_stats.csv
+#
+#   This will produce "periodic_stat.pdf"
 #
 
 import sys
