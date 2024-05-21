@@ -21,10 +21,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Plot dimension;
-NUM_PLOTS_Y = 8
 PLT_SCALE = 0.5
 PLT_WIDTH  = 28 * PLT_SCALE
-PLT_HEIGHT = 4.5 * NUM_PLOTS_Y * PLT_SCALE
+#PLT_HEIGHT = 4.5 * NUM_PLOTS_Y * PLT_SCALE
 
 
 # constants;
@@ -48,9 +47,9 @@ class PeriodicStatVisualizer:
     self.find_end_timestamp()
 
   # visualize
-  def visualize(self):
-    fig, axs = plt.subplots(NUM_PLOTS_Y,1)
-    fig.set_size_inches(PLT_WIDTH,PLT_HEIGHT)
+  def visualize(self, plots):
+    fig, axs = plt.subplots(len(plots),1)
+    fig.set_size_inches(PLT_WIDTH,len(plots)*PLT_SCALE*4.5)
 
     # load router data
     df = self.open_csv(self.bpath + "/router_periodic_stat.csv")
@@ -60,27 +59,44 @@ class PeriodicStatVisualizer:
     df = df[(df["x"] >= 0) & (df["x"] < NUM_TILES_X)]
     self.network_df = df[(df["y"] >= 0) & (df["y"] < NUM_TILES_Y)]
 
-
+    curr_ax = 0
     # figure : core util
-    self.plot_core(fig, axs[0])
+    if "Core" in plots:
+      self.plot_core(fig, axs[curr_ax])
+      curr_ax += 1
 
     # figure : vcache
-    self.plot_vcache(fig, axs[1])
+    if "Cache" in plots:
+      self.plot_vcache(fig, axs[curr_ax])
+      curr_ax += 1
 
     # figure : DRAM
-    self.plot_dram(fig, axs[2])
+    if "DRAM" in plots:
+      self.plot_dram(fig, axs[curr_ax])
+      curr_ax += 1
 
     # figure : network
-    self.plot_network_tile_vcache(fig, axs[3])
-    self.plot_network_fwd_hor(fig, axs[4])
-    self.plot_network_fwd_ver(fig, axs[5])
-    self.plot_network_rev_hor(fig, axs[6])
-    self.plot_network_rev_ver(fig, axs[7])
+    if "noc-tile-cache" in plots:
+      self.plot_network_tile_vcache(fig, axs[curr_ax])
+      curr_ax += 1
+    if "noc-fwd-horiz" in plots:
+      self.plot_network_fwd_hor(fig, axs[curr_ax])
+      curr_ax += 1
+    if "noc-fwd-vert" in plots:
+      self.plot_network_fwd_ver(fig, axs[curr_ax])
+      curr_ax += 1
+    if "noc-rev-horiz" in plots:
+      self.plot_network_rev_hor(fig, axs[curr_ax])
+      curr_ax += 1
+    if "noc-rev-vert" in plots:
+      self.plot_network_rev_ver(fig, axs[curr_ax])
+      curr_ax += 1
 
 
     # finish up;
-    fig.tight_layout()
+    fig.tight_layout(pad=0.5)
     plt.savefig("periodic_stat.pdf", bbox_inches="tight")
+    plt.savefig("periodic_stat.png", bbox_inches="tight")
     plt.close()
     return
 
@@ -130,6 +146,8 @@ class PeriodicStatVisualizer:
     ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     ax.set_title("DRAM utilization")
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylim(0,100)
     return
 
   # Plot vcache
@@ -182,6 +200,8 @@ class PeriodicStatVisualizer:
     ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Vcache utilization")
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylim(0,100)
     return
 
   # Plot core util
@@ -341,7 +361,7 @@ class PeriodicStatVisualizer:
         ys_barrier_stall.append(y_barrier_stall/ DENOM)
 
     # stack plot
-    labels = ["Int Instr", "FP Instr", "VC Load stall", "Network stall", "Bypass stall",
+    labels = ["Int Instr", "FP Instr", "MemorySys stall", "Network stall", "Bypass stall",
             "Branch miss", "Div stall", "icache miss", "Fence stall", "Barrier stall"]
     colors = ["green", "lightgreen", "gold", "orange", "purple",
               "magenta", "brown", "navy", "gray", "darkgray"]
@@ -353,6 +373,8 @@ class PeriodicStatVisualizer:
     ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Core utilization")
     ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylim(0,100)
     return
 
   # network fwd hor;
@@ -508,10 +530,14 @@ class PeriodicStatVisualizer:
     ax.set_xticks([])
     ax.set_title(title)
     ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.23))
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylim(0,100)
+    return
 
 # main;
 if __name__ == "__main__":
   # arguments;
   test_path = sys.argv[1]
   vis = PeriodicStatVisualizer(test_path) 
-  vis.visualize()
+  plots = ["Core", "Cache", "DRAM", "noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
+  vis.visualize(plots)
