@@ -21,8 +21,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Plot dimension;
-PLT_SCALE = 0.5
-PLT_WIDTH  = 28 * PLT_SCALE
+PLT_SCALE = 1.5
+PLT_WIDTH  = 7 * PLT_SCALE
 #PLT_HEIGHT = 4.5 * NUM_PLOTS_Y * PLT_SCALE
 
 
@@ -49,7 +49,7 @@ class PeriodicStatVisualizer:
   # visualize
   def visualize(self, plots):
     fig, axs = plt.subplots(len(plots),1)
-    fig.set_size_inches(PLT_WIDTH,len(plots)*PLT_SCALE*4.5)
+    fig.set_size_inches(PLT_WIDTH,len(plots)*PLT_SCALE*0.9)
 
     # load router data
     df = self.open_csv(self.bpath + "/router_periodic_stat.csv")
@@ -94,9 +94,9 @@ class PeriodicStatVisualizer:
 
 
     # finish up;
-    fig.tight_layout(pad=0.5)
-    plt.savefig("periodic_stat.pdf", bbox_inches="tight")
-    plt.savefig("periodic_stat.png", bbox_inches="tight")
+    fig.tight_layout(pad=0.3)
+    plt.savefig("periodic_stat_core.pdf", bbox_inches="tight")
+    plt.savefig("periodic_stat_core.png", bbox_inches="tight")
     plt.close()
     return
 
@@ -142,14 +142,25 @@ class PeriodicStatVisualizer:
     labels = ["refresh", "read", "write", "busy", "idle"]
     colors = ["black", "green", "lightgreen", "orange", "gray"]
     ax.stackplot(xs, ys_ref, ys_read, ys_write, ys_busy, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
-    ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
-    ax.set_title("DRAM utilization")
-    ax.set_xlim(xs[0], xs[0]+120250)
+    #ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.35), fontsize=8)
+    ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.35),labelspacing=0.2, borderpad=0.1)
+    ax.set_ylabel("DRAM")
     #ax.set_xlim(xs[0], xs[-1])
     ax.set_ylim(0,100)
     ax.set_yticks([])
+
+    # xticks for DRAM refresh cycle;
+    xticks = []
+    curr_tick = 0
+    while curr_tick < xs[-1]:
+      xticks.append(curr_tick)
+      curr_tick += 3900
+    ax.set_xticks(xticks)
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_xticklabels([])
+    ax.set_xlim(xs[0], xs[0]+120250) # jacobi
+    #ax.set_xlim(xs[0], xs[0]+568750) # bfs
     return
 
   # Plot vcache
@@ -198,13 +209,23 @@ class PeriodicStatVisualizer:
     colors = ["green", "lightgreen", "orange", "brown", "purple", "gray"]
 
     ax.stackplot(xs, ys_load, ys_store, ys_miss, ys_atomic, ys_stall_rsp, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
-    ax.set_title("Vcache utilization")
-    ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
-    ax.set_xlim(xs[0], xs[0]+180750)
-    #ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylabel("cache")
+    ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.65))
+    #ax.legend(ncol=6, loc="upper center")
     ax.set_ylim(0,100)
+    ax.set_yticks([])
+
+    # xticks for DRAM refresh cycle;
+    xticks = []
+    curr_tick = 0
+    while curr_tick < xs[-1]:
+      xticks.append(curr_tick)
+      curr_tick += 5850
+    ax.set_xticks(xticks)
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_xticklabels([])
+    ax.set_xlim(xs[0], xs[0]+854250)
     return
 
   # Plot core util
@@ -225,6 +246,30 @@ class PeriodicStatVisualizer:
       "instr_fdiv",
       "instr_fsqrt",
     ]
+    MEM_INSTR_TYPES = [
+      "instr_local_ld",
+      "instr_local_st",
+
+      "instr_remote_ld_dram",
+      "instr_remote_seq_ld_dram",
+      "instr_remote_ld_global",
+      "instr_remote_ld_group",
+      "instr_remote_st_dram",
+      "instr_remote_st_global",
+      "instr_remote_st_group",
+
+      "instr_local_flw",
+      "instr_local_fsw",
+
+      "instr_remote_flw_dram",
+      "instr_remote_seq_flw_dram",
+      "instr_remote_flw_global",
+      "instr_remote_flw_group",
+      "instr_remote_fsw_dram",
+      "instr_remote_fsw_global",
+      "instr_remote_fsw_group",
+    ]
+
     bubble_cols = list(filter(lambda x: x.startswith("bubble_"), list(df)))
     stall_cols = list(filter(lambda x: x.startswith("stall_"), list(df)))
     stall_cols.append("miss_icache")
@@ -236,9 +281,12 @@ class PeriodicStatVisualizer:
     # groupby sum
     group_instr_total = group_df["instr_total"].sum()
     group_instr_fp = {}
+    group_instr_mem = {}
     group_stall = {}
     for col in FP_INSTR_TYPES:
       group_instr_fp[col] = group_df[col].sum()
+    for col in MEM_INSTR_TYPES:
+      group_instr_mem[col] = group_df[col].sum()
     for col in bubble_cols:
       group_stall[col] = group_df[col].sum()
     for col in stall_cols:
@@ -249,6 +297,7 @@ class PeriodicStatVisualizer:
     # ys
     ys_int_exec = []
     ys_fp_exec = []
+    ys_mem_exec = []
     ys_dram_stall = []
     ys_network_stall = []
     ys_bypass_stall = []
@@ -269,9 +318,14 @@ class PeriodicStatVisualizer:
         for col in FP_INSTR_TYPES:
           y_fp_exec += (group_instr_fp[col][t1] - group_instr_fp[col][t0])
         ys_fp_exec.append(y_fp_exec / DENOM)
+        # mem exec
+        y_mem_exec = 0
+        for col in MEM_INSTR_TYPES:
+          y_mem_exec += (group_instr_mem[col][t1] - group_instr_mem[col][t0])
+        ys_mem_exec.append(y_mem_exec / DENOM)
         # int exec
         y_int_exec = (group_instr_total[t1] - group_instr_total[t0])
-        y_int_exec -= y_fp_exec
+        y_int_exec -= (y_fp_exec + y_mem_exec)
         ys_int_exec.append(y_int_exec / DENOM)
 
         # dram stall
@@ -322,15 +376,12 @@ class PeriodicStatVisualizer:
         ys_branch_miss.append(y_branch_miss / DENOM)
 
         # icache miss
-        ICACHE_MISS_COLS = [
-          "stall_ifetch_wait",
-          "bubble_icache_miss",
-          "miss_icache"
-        ]
-        y_icache_miss= 0
-        for col in ICACHE_MISS_COLS:
-          y_icache_miss += (group_stall[col][t1] - group_stall[col][t0])
-        ys_icache_miss.append(y_icache_miss/ DENOM)
+        #ICACHE_MISS_COLS = [
+        #]
+        #y_icache_miss= 0
+        #for col in ICACHE_MISS_COLS:
+        #  y_icache_miss += (group_stall[col][t1] - group_stall[col][t0])
+        #ys_icache_miss.append(y_icache_miss/ DENOM)
 
         # div stall
         DIV_STALL_COLS = [
@@ -344,9 +395,12 @@ class PeriodicStatVisualizer:
           y_div_stall += (group_stall[col][t1] - group_stall[col][t0])
         ys_div_stall.append(y_div_stall/ DENOM)
 
-        # fence stall
+        # other stall
         FENCE_STALL_COLS = [
-          "stall_fence"
+          "stall_fence",
+          "stall_ifetch_wait",
+          "bubble_icache_miss",
+          "miss_icache"
         ]
         y_fence_stall = 0
         for col in FENCE_STALL_COLS:
@@ -364,21 +418,33 @@ class PeriodicStatVisualizer:
         ys_barrier_stall.append(y_barrier_stall/ DENOM)
 
     # stack plot
-    labels = ["Int Instr", "FP Instr", "MemorySys stall", "Network stall", "Bypass stall",
-            "Branch miss", "Div stall", "icache miss", "Fence stall", "Barrier stall"]
-    colors = ["green", "lightgreen", "gold", "orange", "purple",
-              "magenta", "brown", "navy", "gray", "darkgray"]
+    labels = ["Int Instr", "MEM Instr", "FP Instr", "MemorySys stall", "Network stall", "Bypass stall",
+            "Branch miss", "Div stall", "Other stall", "Barrier stall"]
+    colors = ["green", "lime", "lightgreen", "gold", "orange", "purple",
+              "magenta", "brown",  "gray", "darkgray"]
     ax.stackplot(xs,
-      ys_int_exec, ys_fp_exec, ys_dram_stall, ys_network_stall, ys_bypass_stall,
-      ys_branch_miss, ys_div_stall, ys_icache_miss, ys_fence_stall, ys_barrier_stall,
+      ys_int_exec, ys_mem_exec, ys_fp_exec, ys_dram_stall, ys_network_stall, ys_bypass_stall,
+      ys_branch_miss, ys_div_stall, ys_fence_stall, ys_barrier_stall,
       labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
-    ax.set_title("Core utilization")
-    ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
-    ax.set_xlim(xs[0], xs[0]+180750)
-    #ax.set_xlim(xs[0], xs[-1])
+    ax.set_ylabel("Core")
+    ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.50),  labelspacing=0.2, borderpad=0.1)
+    #ax.legend(ncol=5, loc="upper center")
+    #ax.set_xlim(xs[0], xs[0]+180750)
     ax.set_ylim(0,100)
+    ax.set_yticks([])
+
+    # xticks for DRAM refresh cycle;
+    xticks = []
+    curr_tick = 0
+    while curr_tick < xs[-1]:
+      xticks.append(curr_tick)
+      curr_tick += 5850
+    ax.set_xticks(xticks)
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_xticklabels([])
+    ax.set_xlim(xs[0], xs[0]+180750) # jacobi
+    #ax.set_xlim(xs[0], xs[0]+854250) # bfs
     return
 
   # network fwd hor;
@@ -531,11 +597,18 @@ class PeriodicStatVisualizer:
     labels = ["utilized", "stalled", "idle"]
     colors = ["green", "yellow", "gray"]
     ax.stackplot(xs, ys_utilized, ys_stalled, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
     ax.set_title(title)
-    ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.23))
-    ax.set_xlim(xs[0], xs[-1])
+    #ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     ax.set_ylim(0,100)
+    # xticks for DRAM refresh cycle;
+    xticks = []
+    curr_tick = 0
+    while curr_tick < xs[-1]:
+      xticks.append(curr_tick)
+      curr_tick += 3900
+    ax.set_xticks(xticks)
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_xticklabels([])
     return
 
 # main;
@@ -544,5 +617,5 @@ if __name__ == "__main__":
   test_path = sys.argv[1]
   vis = PeriodicStatVisualizer(test_path)
   #plots = ["Core", "Cache", "DRAM", "noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
-  plots = ["Core", "Cache", "DRAM", ]
+  plots = ["Core", "DRAM", ]
   vis.visualize(plots)

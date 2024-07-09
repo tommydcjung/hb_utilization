@@ -9,8 +9,8 @@ NUM_TILES_X = 16
 
 DETAILED_STALL_BUBBLE_COLOR = {
   # DRAM = red
-  "stall_depend_dram_load"        : "red",
-  "stall_depend_dram_seq_load"    : "tomato",
+  "stall_depend_dram_load"        : "yellow",
+  "stall_depend_dram_seq_load"    : "yellow",
   "stall_depend_dram_amo"         : "darkred",
 
   # TG
@@ -25,7 +25,8 @@ DETAILED_STALL_BUBBLE_COLOR = {
 
   # network = orange
   "stall_remote_req"          : "orange",
-  "stall_remote_credit"       : "darkorange",
+  #"stall_remote_credit"       : "darkorange",
+  "stall_remote_credit"       : "orange",
 
   # memory ordering = 
   "stall_amo_aq"              : "dimgray",
@@ -197,10 +198,12 @@ class CoreBloodGraph:
       
     # pixel location
     cycle0 = cycle - self.min_cycle
+    if cycle0 < 0:
+      return
     col = cycle0 % self.img_width
     floor = cycle0 // self.img_width
     row = floor*(2+(NUM_TILES_X*NUM_TILES_Y)) + (trace["x"]+(trace["y"]*NUM_TILES_X))
-
+    
     assert(row <= self.img_height), "{}, {}".format(row, self.img_height)
     # color
     op = trace["operation"]
@@ -230,6 +233,7 @@ class CoreBloodGraph:
 
     # save image;
     self.img.save("core_bg.png")
+    self.img.save("core_bg.pdf")
     return
 
   def generate_legend(self):

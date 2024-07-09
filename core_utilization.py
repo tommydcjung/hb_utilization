@@ -12,7 +12,27 @@ FP_INSTR_TYPES = [
 
   "instr_fdiv",
   "instr_fsqrt",
-  
+]
+
+MEM_INSTR_TYPES = [
+    "instr_local_ld",
+    "instr_local_st",
+    "instr_remote_ld_dram",
+    "instr_remote_seq_ld_dram",
+    "instr_remote_ld_global",
+    "instr_remote_ld_group",
+    "instr_remote_st_dram",
+    "instr_remote_st_global",
+    "instr_remote_st_group",
+    "instr_local_flw",
+    "instr_local_fsw",
+    "instr_remote_flw_dram",
+    "instr_remote_seq_flw_dram",
+    "instr_remote_flw_global",
+    "instr_remote_flw_group",
+    "instr_remote_fsw_dram",
+    "instr_remote_fsw_global",
+    "instr_remote_fsw_group",
 ]
 
 def parse_vanilla_stat(filename="vanilla_stats.csv"):
@@ -36,6 +56,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
   total_bubble_cycle = 0
   total_stall_cycle = 0
   fp_instr_executed = 0
+  mem_instr_executed = 0
 
   # for each bubble and stall type
   each_bubble_cycle = {}
@@ -63,6 +84,9 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
     fp_instr_total = 0
     for fpt in FP_INSTR_TYPES:
       fp_instr_total += df[fpt][i]
+    mem_instr_total = 0
+    for fpt in MEM_INSTR_TYPES:
+      mem_instr_total += df[fpt][i]
 
     # kernel start
     if tag_type == 2:
@@ -72,6 +96,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
       total_cycle -= timestamp
       instr_cycle -= instr_total
       fp_instr_executed -= fp_instr_total
+      mem_instr_executed -= mem_instr_total
       for col in bubble_cols:
         total_bubble_cycle     -= df[col][i]
         each_bubble_cycle[col] -= df[col][i]
@@ -89,6 +114,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
       total_cycle += timestamp
       instr_cycle += instr_total
       fp_instr_executed += fp_instr_total
+      mem_instr_executed += mem_instr_total
       for col in bubble_cols:
         total_bubble_cycle += df[col][i]
         each_bubble_cycle[col] += df[col][i]
@@ -118,6 +144,7 @@ def parse_vanilla_stat(filename="vanilla_stats.csv"):
 
   curr_stat["non_fp_instr_exec"] = instr_cycle-fp_instr_executed
   curr_stat["fp_instr_exec"] = fp_instr_executed
+  curr_stat["mem_instr_exec"] = mem_instr_executed
   curr_stat["total_instr_exec"] = instr_cycle
   
   return curr_stat
@@ -162,8 +189,11 @@ def print_vanilla_stat(stat):
 
 def summarize_core_stall(stat):
   # Instr exec;
-  int_instr_exec = stat["non_fp_instr_exec"]
+  int_instr_exec = stat["non_fp_instr_exec"] - stat["mem_instr_exec"]
   fp_instr_exec = stat["fp_instr_exec"]
+  mem_instr_exec = stat["mem_instr_exec"]
+  # mem exec;
+  
   # DRAM stall;
   dram_stall = stat["stall_depend_dram_load"]
   dram_stall += stat["stall_depend_dram_seq_load"]
@@ -185,27 +215,28 @@ def summarize_core_stall(stat):
   branch_miss += stat["bubble_jalr_miss"]
   # div stall
   div_stall = stat["stall_depend_fdiv"]
+  div_stall += stat["stall_depend_idiv"]
   div_stall += stat["stall_fdiv_busy"]
   div_stall += stat["stall_idiv_busy"]
-  # fence stall
-  fence_stall = stat["stall_fence"]
   # barrier stall
   barrier_stall = stat["stall_barrier"]
-  # icache miss
-  icache_miss = stat["stall_ifetch_wait"]
-  icache_miss += stat["bubble_icache_miss"]
+  barrier_stall += stat["stall_lr_aq"]
+  # other stall
+  other_stall = stat["stall_ifetch_wait"]
+  other_stall += stat["bubble_icache_miss"]
+  #other_stall += stat["miss_icache"]
+  other_stall += stat["stall_fence"]
 
   print("Stall Summary")
   print("IntInstrExec    = {:.2f} %".format(100*int_instr_exec/stat["total_cycle"]))
   print("FPInstrExec     = {:.2f} %".format(100*fp_instr_exec/stat["total_cycle"]))
+  print("MEMInstrExec    = {:.2f} %".format(100*mem_instr_exec/stat["total_cycle"]))
   print("MemorySysStall  = {:.2f} %".format(100*dram_stall/stat["total_cycle"]))
   print("NetworkStall    = {:.2f} %".format(100*network_stall/stat["total_cycle"]))
   print("BypassStall     = {:.2f} %".format(100*bypass_stall/stat["total_cycle"]))
   print("BranceMiss      = {:.2f} %".format(100*branch_miss/stat["total_cycle"]))
   print("DivStall        = {:.2f} %".format(100*div_stall/stat["total_cycle"]))
-  print("FenceStall      = {:.2f} %".format(100*fence_stall/stat["total_cycle"]))
   print("BarrierStall    = {:.2f} %".format(100*barrier_stall/stat["total_cycle"]))
-  if icache_miss != 0:
-    print("icacheMiss      = {:.2f} %".format(100*icache_miss/stat["total_cycle"]))
+  print("OtherStall      = {:.2f} %".format(100*other_stall/stat["total_cycle"]))
   
 

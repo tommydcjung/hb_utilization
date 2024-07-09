@@ -21,8 +21,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Plot dimension;
-PLT_SCALE = 0.5
-PLT_WIDTH  = 28 * PLT_SCALE
+PLT_SCALE = 1.5
+PLT_WIDTH  = 7 * PLT_SCALE
 #PLT_HEIGHT = 4.5 * NUM_PLOTS_Y * PLT_SCALE
 
 
@@ -49,7 +49,7 @@ class PeriodicStatVisualizer:
   # visualize
   def visualize(self, plots):
     fig, axs = plt.subplots(len(plots),1)
-    fig.set_size_inches(PLT_WIDTH,len(plots)*PLT_SCALE*4.5)
+    fig.set_size_inches(PLT_WIDTH,len(plots)*PLT_SCALE*0.8)
 
     # load router data
     df = self.open_csv(self.bpath + "/router_periodic_stat.csv")
@@ -95,8 +95,8 @@ class PeriodicStatVisualizer:
 
     # finish up;
     fig.tight_layout(pad=0.5)
-    plt.savefig("periodic_stat.pdf", bbox_inches="tight")
-    plt.savefig("periodic_stat.png", bbox_inches="tight")
+    plt.savefig("periodic_stat_noc.pdf", bbox_inches="tight")
+    plt.savefig("periodic_stat_noc.png", bbox_inches="tight")
     plt.close()
     return
 
@@ -391,7 +391,7 @@ class PeriodicStatVisualizer:
         cond |= (df["output_dir"] == "RW") & (df["x"] == ((NUM_TILES_X/2)+i))
       return df[cond]
     denom = 2*NUM_TILES_Y*(1+RF_X)*ROUTER_PERIOD / 100
-    self.plot_router_util(fig, ax, 1, cond, "Network FWD Horizontal", denom)
+    self.plot_router_util(fig, ax, 1, cond, "FWD Horizontal", denom, False)
     return
 
 
@@ -403,7 +403,7 @@ class PeriodicStatVisualizer:
       return df[cond]
 
     denom = 2 * NUM_TILES_X*ROUTER_PERIOD / 100
-    self.plot_router_util(fig, ax, 1, cond, "Network FWD Vertical", denom)
+    self.plot_router_util(fig, ax, 1, cond, "FWD Vertical", denom, False)
     return
 
   # network rev hor;
@@ -417,7 +417,7 @@ class PeriodicStatVisualizer:
       return df[cond]
       
     denom = 2*NUM_TILES_Y * (1+RF_X)*ROUTER_PERIOD / 100
-    self.plot_router_util(fig, ax, 0, cond, "Network Rev Horizontal", denom)
+    self.plot_router_util(fig, ax, 0, cond, "REV Horizontal", denom, False)
     return
 
   # network rev ver;
@@ -428,7 +428,7 @@ class PeriodicStatVisualizer:
       return df[cond]
 
     denom = 2 * NUM_TILES_X*ROUTER_PERIOD / 100
-    self.plot_router_util(fig, ax, 0, cond, "Network Rev Vertical", denom)
+    self.plot_router_util(fig, ax, 0, cond, "REV Vertical", denom, True)
     return
 
   # network tile vcache;
@@ -439,7 +439,7 @@ class PeriodicStatVisualizer:
       return df[cond]
 
     denom = 2*NUM_TILES_X*ROUTER_PERIOD / 100
-    self.plot_router_util(fig, ax, 1, cond, "Network tile-vcache", denom)
+    self.plot_router_util(fig, ax, 1, cond, "Tile-to-Cache", denom, False)
     return
 
   #                     #
@@ -499,7 +499,7 @@ class PeriodicStatVisualizer:
     return dir_map[d]
 
   # plot router util;
-  def plot_router_util(self, fig, ax, XY_order, cond, title, denom):
+  def plot_router_util(self, fig, ax, XY_order, cond, title, denom,legend):
     df = self.network_df[self.network_df["XY_order"] == XY_order]
     # filter condition
     df = cond(df)
@@ -531,11 +531,22 @@ class PeriodicStatVisualizer:
     labels = ["utilized", "stalled", "idle"]
     colors = ["green", "yellow", "gray"]
     ax.stackplot(xs, ys_utilized, ys_stalled, ys_idle, labels=labels, colors=colors, step="post")
-    ax.set_xticks([])
-    ax.set_title(title)
-    ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.23))
+    #ax.set_xticks([])
+    ax.set_ylabel(title)
+    if legend is True:
+      ax.legend(ncol=3, loc="lower center", bbox_to_anchor=(0.5,-0.30))
     ax.set_xlim(xs[0], xs[-1])
     ax.set_ylim(0,100)
+    ax.set_yticks([])
+    # xticks for DRAM refresh cycle;
+    xticks = []
+    curr_tick = 0
+    while curr_tick < xs[-1]:
+      xticks.append(curr_tick)
+      curr_tick += 3900*1.5
+    ax.set_xticks(xticks)
+    ax.set_xlim(xs[0], xs[-1])
+    ax.set_xticklabels([])
     return
 
 # main;
@@ -543,6 +554,6 @@ if __name__ == "__main__":
   # arguments;
   test_path = sys.argv[1]
   vis = PeriodicStatVisualizer(test_path)
-  #plots = ["Core", "Cache", "DRAM", "noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
-  plots = ["Core", "Cache", "DRAM", ]
+  plots = ["noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
+  #plots = ["Core", "Cache", "DRAM", ]
   vis.visualize(plots)
