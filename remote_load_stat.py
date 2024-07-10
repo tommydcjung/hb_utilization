@@ -1,55 +1,100 @@
-import csv
+#
+#   remote_load_stat.py
+#
+#   python remote_load_stat.py {ruche_x} {depop} {csvpath}
+#
 
-def parse_remote_load_stat(filename="remote_load_trace.csv"):
+import csv
+import sys
+import os
+from statistics import mean
+
+
+def mesh_delay(dx, dy):
+  return (dx+dy)*2 
+
+
+def ruche_pop_delay(rf_x, dx, dy):
+  delay_x = 0
+  curr_x = dx
+    
+  while curr_x > 0:
+    if curr_x >= rf_x:
+      curr_x -= rf_x
+      delay_x += 1
+    else:
+      curr_x -= 1
+      delay_x +=1
+
+  return (2*dy)+ (2*delay_x)
+
+
+def ruche_depop_delay(rf_x, dx, dy):
+  delay_x = 0
+  curr_x = dx
+    
+  while curr_x > 0:
+    if curr_x > rf_x:
+      curr_x -= rf_x
+      delay_x += 1
+    else:
+      curr_x -= 1
+      delay_x +=1
+
+  return (2*dy) + (2*delay_x)
+
+def parse_remote_load_stat(rf_x, depop, filename="remote_load_trace.csv"):
+  # parse csv;
   try: 
     f = open(filename, "r")
   except:
     print("{} not found.".format(filename))
     return
- 
   csv_reader = csv.DictReader(f, delimiter=",")
  
-  total_count = 0
-  int_count = 0
-  float_count = 0
-  total_latency = 0
-  int_latency = 0
-  float_latency = 0
+  int_delays = []
+  con_delays = []
+  total_delays  = []
   
   for row in csv_reader:
-    start_cycle = int(row["start_cycle"]) 
-    if row["end_cycle"] != "x":
-      end_cycle = int(row["end_cycle"]) 
     src_x = int(row["src_x"]) 
     src_y = int(row["src_y"]) 
     dest_x = int(row["dest_x"]) 
     dest_y = int(row["dest_y"]) 
-    type0 = row["type"]
-    if row["latency"] != "x":
-      latency = int(row["latency"]) 
-    if type0 == "int":
-      total_count += 1
-      total_latency += latency
-      int_count += 1
-      int_latency += latency
-    elif type0 == "float":
-      total_count += 1
-      total_latency += latency
-      float_count += 1
-      float_latency += latency
+    dx = abs(src_x-dest_x)
+    dy = abs(src_y-dest_y)
+    latency = int(row["latency"])
+
+    # calculate intrinsic delay;
+    int_delay = 3
+    if rf_x  == 0:
+      int_delay += mesh_delay(dx,dy)
+    else:
+      if depop == 0:
+        int_delay += ruche_pop_delay(rf_x,dx,dy)
+      else:
+        int_delay += ruche_depop_delay(rf_x,dx,dy)
+    # congestion delay
+    con_delay = latency - int_delay
+    assert con_delay >= 0, "latency = {}, int_delay = {}, con_delay = {}, dx = {}, dy = {}".format(latency, int_delay, con_delay, dx, dy)
+
+    total_delays.append(latency)
+    int_delays.append(int_delay)
+    con_delays.append(con_delay)
 
 
+  # average;
+  int_mean = mean(int_delays)
+  con_mean = mean(con_delays)
+  total_mean = mean(total_delays)
+  
+  #print("mean total      delay = {}".format(total_mean))
+  print("mean intrinsic  delay = {}".format(int_mean))
+  print("mean congestion delay = {}".format(con_mean))
 
-  total_average_latency = 0 if total_count == 0 else total_latency/total_count
-  int_average_latency = 0 if int_count == 0 else int_latency/int_count
-  float_average_latency = 0 if float_count == 0 else float_latency/float_count
-  print("--------------------------------")
-  print("Remote Load Stat")
-  print("--------------------------------")
-  print("Int Count              = {}".format(int_count))
-  print("Int Average Latency    = {:.3f}".format(int_average_latency))
-  print("Float Count            = {}".format(float_count))
-  print("Float Average Latency  = {:.3f}".format(float_average_latency))
-  print("Total Count            = {}".format(total_count))
-  print("Total Average Latency  = {:.3f}".format(total_average_latency))
-  print("--------------------------------")
+# main
+if __name__ == "__main__":
+  rf_x = int(sys.argv[1])
+  depop = int(sys.argv[2])
+  os.chdir(sys.argv[3])
+  parse_remote_load_stat(rf_x, depop)
