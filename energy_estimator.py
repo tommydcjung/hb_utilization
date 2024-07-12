@@ -31,7 +31,7 @@ class EnergyEstimator:
   # main func;
   def estimate(self):
     self.parse_vanilla_stat()
-    #self.parse_router_stat()
+    self.parse_router_stat()
     self.report()
     return
 
@@ -150,13 +150,91 @@ class EnergyEstimator:
   def parse_router_stat(self):
     # open csv;
     df = pd.read_csv(self.bpath + "router_stat.csv")
+
+    # find start and end timestamp;
+    start_timestamp = (2**32)-1
+    end_timestamp = 0
+    timestamps = df["global_ctr"]
+    for i in range(len(timestamps)):
+      timestamp = timestamps[i]
+      if start_timestamp > timestamp:
+        start_timestamp = timestamp
+      if end_timestamp < timestamp:
+        end_timestamp = timestamp
+
+    # filter;
+    start_cond = ((df["global_ctr"] == start_timestamp)
+               & (df["XY_order"] == 1)
+               & (df["x"] >= 32)
+               & (df["x"] < 64)
+               & (df["y"] >= 16)
+               & (df["y"] < 32)
+               & (df["output_dir"] != 0))
+    end_cond = ((df["global_ctr"] == end_timestamp)
+               & (df["XY_order"] == 1)
+               & (df["x"] >= 32)
+               & (df["x"] < 64)
+               & (df["y"] >= 16)
+               & (df["y"] < 32)
+               & (df["output_dir"] != 0))
+
+    start_df = df[start_cond]
+    end_df   = df[end_cond]
+
+    # count utilized;
+    hor_count   = 0
+    ver_count   = 0
+    ruche_hor_count = 0
+    
+    for i in range(len(start_df)):
+      utilized = start_df["utilized"].iloc[i]
+      output_dir = start_df["output_dir"].iloc[i]
+
+      if output_dir in [1,2]:
+        hor_count -= utilized
+      elif output_dir in [3,4]:
+        ver_count -= utilized
+      elif output_dir in [5,6]:
+        ruche_hor_count -= utilized
+
+    for i in range(len(end_df)):
+      utilized = end_df["utilized"].iloc[i]
+      output_dir = end_df["output_dir"].iloc[i]
+
+      if output_dir in [1,2]:
+        hor_count += utilized
+      elif output_dir in [3,4]:
+        ver_count += utilized
+      elif output_dir in [5,6]:
+        ruche_hor_count += utilized
+
+    # calculate router energy;
+    if self.rf_x == 0:
+      self.router_energy  = hor_count * 4.68
+      self.router_energy += ver_count * 4.80
+    else:
+      if self.depop == 1:
+        self.router_energy  = hor_count * 4.97
+        self.router_energy += ver_count * 5.15
+        self.router_energy += ruche_hor_count * 3.82
+      else:
+        self.router_energy  = hor_count * 5.04
+        self.router_energy += ver_count * 5.17
+        self.router_energy += ruche_hor_count * 3.83
+
+    # calculate wire energy;
+    if self.rf_x > 0:
+      self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.87
+
     return
 
 
   # report text;
   def report(self):
-    print("core_energy  (uJ) = {:.3f}".format(self.core_energy / 1000000))
-    print("stall_energy (uJ) = {:.3f}".format(self.stall_energy / 1000000))
+    print("core_energy    (uJ) = {:.2f}".format(self.core_energy / 1000000))
+    print("stall_energy   (uJ) = {:.2f}".format(self.stall_energy / 1000000))
+    print("router_energy  (uJ) = {:.2f}".format(self.router_energy / 1000000))
+    print("wire_energy    (uJ) = {:.2f}".format(self.wire_energy / 1000000))
 
 
 # main();
