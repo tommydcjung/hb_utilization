@@ -89,8 +89,8 @@ def parse_remote_load_stat(rf_x, depop, filename="remote_load_trace.csv"):
   total_mean = mean(total_delays)
   
   #print("mean total      delay = {}".format(total_mean))
-  print("mean intrinsic  delay = {}".format(int_mean))
-  print("mean congestion delay = {}".format(con_mean))
+  print("mean intrinsic  delay = {:.2f}".format(int_mean))
+  print("mean congestion delay = {:.2f}".format(con_mean))
 
 # main
 if __name__ == "__main__":
