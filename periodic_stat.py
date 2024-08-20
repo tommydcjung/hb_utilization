@@ -146,8 +146,8 @@ class PeriodicStatVisualizer:
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
     ax.set_title("DRAM utilization")
-    ax.set_xlim(xs[0], xs[0]+120250)
-    #ax.set_xlim(xs[0], xs[-1])
+    #ax.set_xlim(xs[0], xs[0]+120250)
+    ax.set_xlim(xs[0], xs[-1])
     ax.set_ylim(0,100)
     ax.set_yticks([])
     return
@@ -202,8 +202,8 @@ class PeriodicStatVisualizer:
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Vcache utilization")
     ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5,-0.23))
-    ax.set_xlim(xs[0], xs[0]+180750)
-    #ax.set_xlim(xs[0], xs[-1])
+    #ax.set_xlim(xs[0], xs[0]+180750)
+    ax.set_xlim(xs[0], xs[-1])
     ax.set_ylim(0,100)
     return
 
@@ -376,8 +376,8 @@ class PeriodicStatVisualizer:
     #ax.set_xticklabels([int(xs[-1]-xs[0])])
     ax.set_title("Core utilization")
     ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5,-0.38))
-    ax.set_xlim(xs[0], xs[0]+180750)
-    #ax.set_xlim(xs[0], xs[-1])
+    #ax.set_xlim(xs[0], xs[0]+180750)
+    ax.set_xlim(xs[0], xs[-1])
     ax.set_ylim(0,100)
     return
 
@@ -543,6 +543,6 @@ if __name__ == "__main__":
   # arguments;
   test_path = sys.argv[1]
   vis = PeriodicStatVisualizer(test_path)
-  #plots = ["Core", "Cache", "DRAM", "noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
-  plots = ["Core", "Cache", "DRAM", ]
+  plots = ["Core", "Cache", "DRAM", "noc-tile-cache", "noc-fwd-horiz", "noc-fwd-vert", "noc-rev-horiz", "noc-rev-vert"]
+  #plots = ["Core", "Cache", "DRAM", ]
   vis.visualize(plots)
