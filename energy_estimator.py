@@ -11,6 +11,9 @@ import numpy as np
 import pandas as pd
 
 
+NUM_TILES_X = 64
+NUM_TILES_Y = 8
+
 class EnergyEstimator:
   
   # constructor;
@@ -165,17 +168,17 @@ class EnergyEstimator:
     # filter;
     start_cond = ((df["global_ctr"] == start_timestamp)
                & (df["XY_order"] == 1)
-               & (df["x"] >= 32)
-               & (df["x"] < 64)
-               & (df["y"] >= 16)
-               & (df["y"] < 32)
+               & (df["x"] >= NUM_TILES_X)
+               & (df["x"] < NUM_TILES_X*2)
+               & (df["y"] >= NUM_TILES_Y)
+               & (df["y"] < NUM_TILES_Y*2)
                & (df["output_dir"] != 0))
     end_cond = ((df["global_ctr"] == end_timestamp)
                & (df["XY_order"] == 1)
-               & (df["x"] >= 32)
-               & (df["x"] < 64)
-               & (df["y"] >= 16)
-               & (df["y"] < 32)
+               & (df["x"] >= NUM_TILES_X)
+               & (df["x"] < NUM_TILES_X*2)
+               & (df["y"] >= NUM_TILES_Y)
+               & (df["y"] < NUM_TILES_Y*2)
                & (df["output_dir"] != 0))
 
     start_df = df[start_cond]
