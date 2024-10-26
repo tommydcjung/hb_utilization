@@ -163,6 +163,7 @@ class VcacheBloodGraph:
       self.mark_trace(trace)
 
     self.img.save("vcache_bg.png")
+    self.img.save("vcache_bg.pdf")
     return
 
     
