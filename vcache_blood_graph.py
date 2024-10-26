@@ -128,7 +128,33 @@ class VcacheBloodGraph:
     return
 
   def generate_legend(self):
-    # TODO
+    palette = {}
+    palette["idle"] = "gray"
+    palette["ld_seq_lw"] = "lime"
+    palette["load"] = "green"
+    palette["sm_seq_sw"] = "cyan"
+    palette["store"] = "blue"
+    palette["stall_rsp"] = "yellow"
+    palette["miss"] = "lightpink"
+    palette["atomic"] = "purple"
+
+    cell_height = 30
+    cell_width = 300
+    img_height = len(palette.keys()) * cell_height
+    img_width = cell_width
+    
+    i = Image.new("RGB", (img_width,img_height), "black")
+    a = ImageDraw.Draw(i)
+    curr_idx = 0
+    for key in palette.keys():
+      y0 = cell_height * curr_idx
+      y1 = y0 + cell_height
+      x0 = 0 
+      x1 = 100
+      a.rectangle([x0,y0,x1,y1], fill=ImageColor.getrgb(palette[key]), outline=ImageColor.getrgb("black"))
+      a.text((x1+1, y0+10), key, fill=ImageColor.getrgb("white"))
+      curr_idx += 1
+    i.save("vcache_bg_legend.png")
     return 
 
   def generate(self):
