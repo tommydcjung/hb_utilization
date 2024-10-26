@@ -122,6 +122,8 @@ class VcacheBloodGraph:
       print("WARNING: Invalid op = {}".format(op))
       color_str = "black"
 
+    col = int(col)
+    row = int(row)
     self.pixel[col,row] = ImageColor.getrgb(color_str)
     return
 

@@ -218,6 +218,8 @@ class CoreBloodGraph:
       color_str = "black"
 
     # set color on pixel;
+    col = int(col)
+    row = int(row)
     self.pixel[col,row] = ImageColor.getrgb(color_str)
     return
 
