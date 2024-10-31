@@ -8,9 +8,7 @@ import numpy as np
 
 
 NUM_TILES_X = 16
-NUM_TILES_Y = 8
-POD_ORIGIN_X = NUM_TILES_X
-POD_ORIGIN_Y = NUM_TILES_Y
+NUM_TILES_Y = 16
 
 
 class LatencyParser:
@@ -21,77 +19,51 @@ class LatencyParser:
     self.rf = rf
     self.depop = depop
     print("network_type={}".format(network_type))
+    print("rf={}".format(rf))
+    print("depop={}".format(depop))
     # vc_y = 0, north
     # vc_y = 1, south
-    self.tile_fwd_table = np.zeros((NUM_TILES_X, NUM_TILES_Y, NUM_TILES_X, 2), dtype=np.uint64)
-    self.tile_fwd_count = np.zeros((NUM_TILES_X, NUM_TILES_Y, NUM_TILES_X, 2), dtype=np.uint64)
-    self.vc_fwd_table = np.zeros((NUM_TILES_X, NUM_TILES_Y, NUM_TILES_X, 2), dtype=np.uint64)
-    self.vc_fwd_count = np.zeros((NUM_TILES_X, NUM_TILES_Y, NUM_TILES_X, 2), dtype=np.uint64)
-    self.vc_rev_table = np.zeros((NUM_TILES_X, 2, NUM_TILES_X, NUM_TILES_Y), dtype=np.uint64)
-    self.vc_rev_count = np.zeros((NUM_TILES_X, 2, NUM_TILES_X, NUM_TILES_Y), dtype=np.uint64)
-    self.tile_rev_table = np.zeros((NUM_TILES_X, 2, NUM_TILES_X, NUM_TILES_Y), dtype=np.uint64)
-    self.tile_rev_count = np.zeros((NUM_TILES_X, 2, NUM_TILES_X, NUM_TILES_Y), dtype=np.uint64)
-    return
-
-  def parse_tile_fwd(self, timestamp, tile_x, tile_y, vc_x, vc_y):
-    self.tile_fwd_table[tile_x,tile_y,vc_x,vc_y] += timestamp
-    self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y] += 1
-    return
-
-  def parse_vc_fwd(self, timestamp, tile_x, tile_y, vc_x, vc_y):
-    self.vc_fwd_table[tile_x,tile_y,vc_x,vc_y] += timestamp
-    self.vc_fwd_count[tile_x,tile_y,vc_x,vc_y] += 1
-    return
-
-  def parse_vc_rev(self, timestamp, vc_x, vc_y, tile_x, tile_y):
-    self.vc_rev_table[vc_x,vc_y,tile_x,tile_y] += timestamp
-    self.vc_rev_count[vc_x,vc_y,tile_x,tile_y] += 1
-    return
-
-  def parse_tile_rev(self, timestamp, vc_x, vc_y, tile_x, tile_y):
-    self.tile_rev_table[vc_x,vc_y,tile_x,tile_y] += timestamp
-    self.tile_rev_count[vc_x,vc_y,tile_x,tile_y] += 1
+    self.arr_size = NUM_TILES_X*NUM_TILES_Y*NUM_TILES_X*2
+    self.tile_fwd_count = np.zeros(self.arr_size)
+    self.vc_fwd_count   = np.zeros(self.arr_size)
+    self.vc_rev_count   = np.zeros(self.arr_size)
+    self.tile_rev_count = np.zeros(self.arr_size)
     return
 
 
-  def parse_line(self, line):
-    words = line.split(",")
-    trace_type = words[0]
-    timestamp = int(words[1])
-    src_x   = int(words[2])
-    src_y   = int(words[3])
-    dest_x  = int(words[4])
-    dest_y  = int(words[5])
-    if trace_type == "tile_fwd":
-      tile_x = src_x - NUM_TILES_X
-      tile_y = src_y - NUM_TILES_Y
-      vc_x = dest_x - NUM_TILES_X 
-      vc_y =  0 if dest_y == (NUM_TILES_Y-1) else 1
-      self.parse_tile_fwd(timestamp, tile_x, tile_y, vc_x, vc_y)
-    elif trace_type == "vc_fwd":
-      tile_x = src_x - NUM_TILES_X
-      tile_y = src_y - NUM_TILES_Y
-      vc_x = dest_x - NUM_TILES_X 
-      vc_y =  0 if dest_y == (NUM_TILES_Y-1) else 1
-      self.parse_vc_fwd(timestamp, tile_x, tile_y, vc_x, vc_y)
-    elif trace_type == "vc_rev":
-      vc_x = src_x - NUM_TILES_X 
-      vc_y =  0 if src_y == (NUM_TILES_Y-1) else 1
-      tile_x = dest_x - NUM_TILES_X
-      tile_y = dest_y - NUM_TILES_Y
-      self.parse_vc_rev(timestamp, vc_x, vc_y, tile_x, tile_y)
-    elif trace_type == "tile_rev":
-      vc_x = src_x - NUM_TILES_X 
-      vc_y =  0 if src_y == (NUM_TILES_Y-1) else 1
-      tile_x = dest_x - NUM_TILES_X
-      tile_y = dest_y - NUM_TILES_Y
-      self.parse_tile_rev(timestamp, vc_x, vc_y, tile_x, tile_y)
+  def get_idx(self, tile_x, tile_y, vc_x, vc_y):
+    vc_y0 = 0 if (vc_y == NUM_TILES_Y-1) else 1
+    vc_id = (NUM_TILES_X * vc_y0) + (vc_x - NUM_TILES_X)
+    base_tile_x = tile_x - NUM_TILES_X
+    base_tile_y = tile_y - NUM_TILES_Y
+    tile_id = (base_tile_y*NUM_TILES_X) + base_tile_x
+    return (tile_id*2*NUM_TILES_X) + vc_id
+
+
+  def parse_count_csv(self, csvfile, arr):
+    with open(csvfile) as f0:
+      lines = f0.readlines()
+      for line in lines:
+        stripped = line.strip()
+        words = stripped.split(",")
+        tile_x = int(words[0])+NUM_TILES_X
+        tile_y = int(words[1])+NUM_TILES_Y
+        vc_x = int(words[2])+NUM_TILES_X
+        vc_y = int(words[3])
+        count  = int(words[4])
+        idx = self.get_idx(tile_x, tile_y, vc_x, vc_y)
+        arr[idx] = count
     return
 
+
+
+
+  # mesh latency;
   def get_mesh_latency(self, src_x, src_y, dest_x, dest_y):
     return abs(dest_y-src_y) + abs(dest_x-src_x)
 
 
+  # half ruche latency;
   def get_half_ruche_latency(self, src_x, src_y, dest_x, dest_y):
     latency = 0
     x_dist = abs(src_x-dest_x)
@@ -115,7 +87,7 @@ class LatencyParser:
     y_dist = abs(src_y-dest_y)
     return latency + y_dist
 
-
+  # full ruche latency;
   def get_full_ruche_latency(self, src_x, src_y, dest_x, dest_y):
     latency = 0
     x_dist = abs(src_x-dest_x)
@@ -157,6 +129,8 @@ class LatencyParser:
 
     return latency
 
+
+  # Torus latency X;
   def get_torus_latency_x(self, src, dst):
     base_src = src - (NUM_TILES_X)
     base_dst = dst - (NUM_TILES_X)
@@ -166,6 +140,7 @@ class LatencyParser:
     cw_dist  = (torus_dst-torus_src) % NUM_TILES_X
     return min(cw_dist, ccw_dist)
 
+  # Torus latency Y;
   def get_torus_latency_y(self, src, dst):
     base_src = src - (NUM_TILES_Y-2)
     base_dst = dst - (NUM_TILES_Y-2)
@@ -175,100 +150,72 @@ class LatencyParser:
     cw_dist  = (torus_dst-torus_src) % (NUM_TILES_Y+4)
     return min(cw_dist, ccw_dist)
 
-
+  # Torus latency;
   def get_torus_latency(self, src_x, src_y, dest_x, dest_y):
     x_latency = self.get_torus_latency_x(src_x, dest_x)
     y_latency = self.get_torus_latency_y(src_y, dest_y)
     return x_latency + y_latency
 
+
+
+
   def parse(self):
-    with open("run.log") as f:
-      for line in f.readlines():
-        stripped = line.strip()
-        if (stripped.startswith("tile_fwd") or stripped.startswith("vc_fwd") or
-            stripped.startswith("vc_rev") or stripped.startswith("tile_rev")):
-          self.parse_line(stripped)
+    # parse nt_latency.txt;
+    with open("nt_latency.txt") as f:
+      average_latency = float(f.readline())
+      print("Total Average Latency        = {:.2f}".format(average_latency))
+
+    # parse tile_fwd_count.csv
+    self.parse_count_csv("tile_fwd_count.csv", self.tile_fwd_count)
+    self.parse_count_csv("vc_fwd_count.csv", self.vc_fwd_count)
+    self.parse_count_csv("vc_rev_count.csv", self.vc_rev_count)
+    self.parse_count_csv("tile_rev_count.csv", self.tile_rev_count)
 
 
-    # fwd latency (sanity check);
+    # Sanity check;
     for tile_x in range(NUM_TILES_X):
       for tile_y in range(NUM_TILES_Y):
         for vc_x in range(NUM_TILES_X):
           for vc_y in range(2):
-            if self.vc_fwd_count[tile_x,tile_y,vc_x,vc_y] != self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y]:
-              print("mismatch")
+            vc_id = (vc_y * NUM_TILES_X) + vc_x
+            tile_id = (tile_y * NUM_TILES_X) + tile_x
+            idx = (tile_id*NUM_TILES_X*2) + vc_id
+            if self.vc_fwd_count[idx] != self.tile_fwd_count[idx]:
+              print("fwd count mismatch")
+            if self.vc_rev_count[idx] != self.tile_rev_count[idx]:
+              print("rev count mismatch")
+            if self.tile_fwd_count[idx] != self.vc_rev_count[idx]:
+              print("fwd and rev count mismatch")
 
-    # rev latency (sanity check);
-    for tile_x in range(NUM_TILES_X):
-      for tile_y in range(NUM_TILES_Y):
-        for vc_x in range(NUM_TILES_X):
-          for vc_y in range(2):
-            if self.vc_rev_count[vc_x,vc_y,tile_x,tile_y] != self.tile_rev_count[vc_x,vc_y,tile_x,tile_y]:
-              print("mismatch")
 
-    if np.sum(self.tile_fwd_count) != np.sum(self.vc_rev_count):
-      print("mismatch")
-
-    # fwd latency.
-    fwd_latency = 0
-    for tile_x in range(NUM_TILES_X):
-      for tile_y in range(NUM_TILES_Y):
-        for vc_x in range(NUM_TILES_X):
-          for vc_y in range(2):
-            fwd_latency += self.vc_fwd_table[tile_x,tile_y,vc_x,vc_y]
-            fwd_latency -= self.tile_fwd_table[tile_x,tile_y,vc_x,vc_y]
-
-    
-    # rev latency.
-    rev_latency = 0
-    for tile_x in range(NUM_TILES_X):
-      for tile_y in range(NUM_TILES_Y):
-        for vc_x in range(NUM_TILES_X):
-          for vc_y in range(2):
-            rev_latency -= self.vc_rev_table[vc_x,vc_y,tile_x,tile_y]
-            rev_latency += self.tile_rev_table[vc_x,vc_y,tile_x,tile_y]
-
-    total_latency = (fwd_latency+rev_latency)/np.sum(self.vc_fwd_count)/2
-    print("total latency        = {}".format((fwd_latency+rev_latency)/np.sum(self.vc_fwd_count)/2))
 
 
     # calculate intrinsic latency;
-    int_latency = 0
-    if self.network_type == "mesh":
-      for tile_x in range(NUM_TILES_X):
-        for tile_y in range(NUM_TILES_Y):
-          for vc_x in range(NUM_TILES_X):
-            for vc_y in range(2):
-              int_latency += self.get_mesh_latency(tile_x,tile_y,vc_x,vc_y) * self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y]
-              int_latency += self.get_mesh_latency(tile_x,tile_y,vc_x,vc_y) * self.vc_rev_count[vc_x,vc_y,tile_x,tile_y]
-      int_latency /= (2*np.sum(self.tile_fwd_count))
-    elif self.network_type == "hruche":
-      for tile_x in range(NUM_TILES_X):
-        for tile_y in range(NUM_TILES_Y):
-          for vc_x in range(NUM_TILES_X):
-            for vc_y in range(2):
-              int_latency += self.get_half_ruche_latency(tile_x,tile_y,vc_x,vc_y) * self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y]
-              int_latency += self.get_half_ruche_latency(tile_x,tile_y,vc_x,vc_y) * self.vc_rev_count[vc_x,vc_y,tile_x,tile_y]
-      int_latency /= (2*np.sum(self.tile_fwd_count))
-    elif self.network_type == "fruche":
-      for tile_x in range(NUM_TILES_X):
-        for tile_y in range(NUM_TILES_Y):
-          for vc_x in range(NUM_TILES_X):
-            for vc_y in range(2):
-              int_latency += self.get_half_ruche_latency(tile_x,tile_y,vc_x,vc_y) * self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y]
-              int_latency += self.get_half_ruche_latency(tile_x,tile_y,vc_x,vc_y) * self.vc_rev_count[vc_x,vc_y,tile_x,tile_y]
-      int_latency /= (2*np.sum(self.tile_fwd_count))
-    elif self.network_type == "torus":
-      for tile_x in range(NUM_TILES_X):
-        for tile_y in range(NUM_TILES_Y):
-          for vc_x in range(NUM_TILES_X):
-            for vc_y in range(2):
-              int_latency += self.get_torus_latency(tile_x,tile_y,vc_x,vc_y) * self.tile_fwd_count[tile_x,tile_y,vc_x,vc_y]
-              int_latency += self.get_torus_latency(tile_x,tile_y,vc_x,vc_y) * self.vc_rev_count[vc_x,vc_y,tile_x,tile_y]
-      int_latency /= (2*np.sum(self.tile_fwd_count))
+    total_int_latency = 0
+    total_count = 0
+    for tile_x in range(NUM_TILES_X, 2*NUM_TILES_X):
+      for tile_y in range(NUM_TILES_Y, 2*NUM_TILES_Y):
+        for vc_x in range(NUM_TILES_X, 2*NUM_TILES_X):
+          for vc_y in [NUM_TILES_Y-1, NUM_TILES_Y*2]:
+            idx = self.get_idx(tile_x, tile_y, vc_x, vc_y)
+            fwd_count = self.tile_fwd_count[idx]
+            rev_count = self.vc_rev_count[idx]
+            if self.network_type == "mesh":
+              lat = self.get_mesh_latency(tile_x,tile_y,vc_x,vc_y)
+            elif self.network_type == "hruche":
+              lat = self.get_half_ruche_latency(tile_x,tile_y,vc_x,vc_y)
+            elif self.network_type == "fruche":
+              lat = self.get_full_ruche_latency(tile_x,tile_y,vc_x,vc_y)
+            elif self.network_type == "torus":
+              lat = self.get_torus_latency(tile_x,tile_y,vc_x,vc_y)
+            total_int_latency += lat * (fwd_count+rev_count)
+            total_count += (fwd_count+rev_count)
+              
+    average_int_latency = total_int_latency / total_count;
 
-    print("int latency          = {}".format(int_latency))
-    print("congestion latency   = {}".format(total_latency-int_latency))
+
+    print("Average int latency          = {:.2f}".format(average_int_latency))
+    print("Average congestion latency   = {:.2f}".format(average_latency-average_int_latency))
     return
 
 
