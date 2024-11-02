@@ -11,14 +11,15 @@ import numpy as np
 import pandas as pd
 
 
-NUM_TILES_X = 64
-NUM_TILES_Y = 8
+NUM_TILES_X = 16
+NUM_TILES_Y = 16
 
 class EnergyEstimator:
   
   # constructor;
-  def __init__(self, rf_x, depop, bpath):
+  def __init__(self, network_type, rf_x, depop, bpath):
     # parameters;
+    self.network_type = network_type
     self.rf_x = rf_x
     self.depop = depop
     self.bpath = bpath
@@ -33,7 +34,7 @@ class EnergyEstimator:
 
   # main func;
   def estimate(self):
-    self.parse_vanilla_stat()
+    #self.parse_vanilla_stat()
     self.parse_router_stat()
     self.report()
     return
@@ -188,6 +189,7 @@ class EnergyEstimator:
     hor_count   = 0
     ver_count   = 0
     ruche_hor_count = 0
+    ruche_ver_count = 0
     
     for i in range(len(start_df)):
       utilized = start_df["utilized"].iloc[i]
@@ -199,6 +201,8 @@ class EnergyEstimator:
         ver_count -= utilized
       elif output_dir in [5,6]:
         ruche_hor_count -= utilized
+      elif output_dir in [7,8]:
+        ruche_ver_count -= utilized
 
     for i in range(len(end_df)):
       utilized = end_df["utilized"].iloc[i]
@@ -210,40 +214,65 @@ class EnergyEstimator:
         ver_count += utilized
       elif output_dir in [5,6]:
         ruche_hor_count += utilized
+      elif output_dir in [7,8]:
+        ruche_ver_count += utilized
 
     # calculate router energy;
-    if self.rf_x == 0:
-      self.router_energy  = hor_count * 4.68
-      self.router_energy += ver_count * 4.80
-    else:
+    if self.network_type == "mesh":
+      self.router_energy  = hor_count * 1.84
+      self.router_energy += ver_count * 1.96
+    elif self.network_type == "hruche":
       if self.depop == 1:
-        self.router_energy  = hor_count * 4.97
-        self.router_energy += ver_count * 5.15
-        self.router_energy += ruche_hor_count * 3.82
+        self.router_energy  = hor_count * 2.06
+        self.router_energy += ver_count * 2.27
+        self.router_energy += ruche_hor_count * 1.79 
       else:
-        self.router_energy  = hor_count * 5.04
-        self.router_energy += ver_count * 5.17
-        self.router_energy += ruche_hor_count * 3.83
+        self.router_energy  = hor_count * 2.24
+        self.router_energy += ver_count * 2.33
+        self.router_energy += ruche_hor_count * 2.09
+    elif self.network_type == "fruche":
+      if self.depop == 1:
+        self.router_energy  = hor_count * 2.46
+        self.router_energy += ver_count * 2.61
+        self.router_energy += ruche_hor_count * 2.21
+        self.router_energy += ruche_ver_count * 2.28
+      else:
+        self.router_energy  = hor_count * 2.75
+        self.router_energy += ver_count * 2.72
+        self.router_energy += ruche_hor_count * 2.61 
+        self.router_energy += ruche_ver_count * 2.53
+    elif self.network_type == "torus":
+      self.router_energy  = hor_count * 3.10
+      self.router_energy += ver_count * 4.03
+  
 
     # calculate wire energy;
-    if self.rf_x > 0:
-      self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.87
-
+    if self.network_type == "hruche":
+      self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.96
+    elif self.network_type == "fruche":
+      self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.96
+      self.wire_energy = ruche_ver_count * (self.rf_x-1) * 0.96
+    elif self.network_type == "torus":
+      self.wire_energy = hor_count * (self.rf_x-1) * 0.96
+      self.wire_energy = ver_count * (self.rf_x-1) * 0.96
+  
     return
 
 
   # report text;
   def report(self):
-    print("core_energy    (uJ) = {:.2f}".format(self.core_energy / 1000000))
-    print("stall_energy   (uJ) = {:.2f}".format(self.stall_energy / 1000000))
+    #print("core_energy    (uJ) = {:.2f}".format(self.core_energy / 1000000))
+    #print("stall_energy   (uJ) = {:.2f}".format(self.stall_energy / 1000000))
     print("router_energy  (uJ) = {:.2f}".format(self.router_energy / 1000000))
     print("wire_energy    (uJ) = {:.2f}".format(self.wire_energy / 1000000))
+    return
 
 
 # main();
 if __name__ == "__main__":
-  rf_x  = int(sys.argv[1])
-  depop = int(sys.argv[2])
-  bpath = sys.argv[3] 
-  ee = EnergyEstimator(rf_x, depop, bpath)
+  network_type = sys.argv[1]
+  rf_x  = int(sys.argv[2])
+  depop = int(sys.argv[3])
+  bpath = sys.argv[4] 
+  ee = EnergyEstimator(network_type, rf_x, depop, bpath)
   ee.estimate()
