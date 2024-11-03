@@ -18,9 +18,9 @@ class LatencyParser:
     self.network_type = network_type
     self.rf = rf
     self.depop = depop
-    print("network_type={}".format(network_type))
-    print("rf={}".format(rf))
-    print("depop={}".format(depop))
+    #print("network_type={}".format(network_type))
+    #print("rf={}".format(rf))
+    #print("depop={}".format(depop))
     # vc_y = 0, north
     # vc_y = 1, south
     self.arr_size = NUM_TILES_X*NUM_TILES_Y*NUM_TILES_X*2
@@ -163,7 +163,7 @@ class LatencyParser:
     # parse nt_latency.txt;
     with open("nt_latency.txt") as f:
       average_latency = float(f.readline())
-      print("Total Average Latency        = {:.2f}".format(average_latency))
+      #print("Total Average Latency        = {:.2f}".format(average_latency))
 
     # parse tile_fwd_count.csv
     self.parse_count_csv("tile_fwd_count.csv", self.tile_fwd_count)
@@ -218,20 +218,56 @@ class LatencyParser:
     print("Average congestion latency   = {:.2f}".format(average_latency-average_int_latency))
     return
 
+bpaths = {
+  "jacobi": "jacobi/nx_64__ny_64__nz_512__warm-cache_no/",
+  "fft128": "fft/128/num-iter_8__warm-cache_no/",
+  "fft256": "fft/256/num-iter_2__warm-cache_no/",
+  "sgemm" : "sgemm/N_512__NITER_1",
+  "bh_16k": "barnes_hut/nbodies_16384__pod-id_0",
+  "bh_32k": "barnes_hut/nbodies_32768__pod-id_0",
+  "bh_64k": "barnes_hut/nbodies_65536__pod-id_0",
 
+  "bfs_pk": "bfs/graph_soc-Pokec__niter_4__pod-id_0",
+  "bfs_hw": "bfs/graph_hollywood-2009__niter_2__pod-id_0/",
+  "bfs_lj": "bfs/graph_ljournal-2008__niter_4__pod-id_0/",
+  "bfs_ca": "bfs/graph_roadNet-CA__niter_131__pod-id_0/",
+  "bfs_us": "bfs/graph_road-usa__niter_968__pod-id_0/",
+  "bfs_rc": "bfs/graph_road-central__niter_1625__pod-id_0/",
+
+  "pr_hw" : "pagerank/graph_hollywood-2009__pod-id_0",
+  "pr_lj" : "pagerank/graph_ljournal-2008__pod-id_0",
+  "pr_pk" : "pagerank/graph_soc-Pokec__pod-id_0",
+  "pr_ca" : "pagerank/graph_roadNet-CA__pod-id_0",
+  "pr_rc" : "pagerank/graph_road-central__pod-id_0",
+  "pr_us" : "pagerank/graph_road-usa__pod-id_0",
+  "spgemm_os" : "spgemm/graph_offshore__pod-id_0",
+  "spgemm_ca" : "spgemm/graph_roadNet-CA__pod-id_0",
+  "spgemm_rc" : "spgemm/graph_road-central__pod-id_0",
+}
 
 
 if __name__ == "__main__":
-  bpath = sys.argv[1]
+  apppath = sys.argv[1]
   network_type = sys.argv[2] # mesh, hruche, fruche, torus;
 
-  os.chdir(bpath)
+  #os.chdir(bpath)
 
   if network_type in ["hruche", "fruche"]:
     rf = int(sys.argv[3])
     depop = int(sys.argv[4])
-    lp = LatencyParser(bpath, network_type, rf, depop)
+    #lp = LatencyParser(bpath, network_type, rf, depop)
   else:    
-    lp = LatencyParser(bpath, network_type)
+    rf = None
+    depop = None
+    #lp = LatencyParser(bpath, network_type)
     
-  lp.parse()
+  for key in bpaths.keys():
+    print(key)
+    curr_path = apppath + "/" + bpaths[key] 
+    os.chdir(curr_path)
+    lp = LatencyParser(curr_path, network_type, rf, depop)
+    lp.parse()
+    print("")
+    
+
+
