@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 
-NUM_TILES_X = 16
+NUM_TILES_X = 32
 NUM_TILES_Y = 16
 
 class EnergyEstimator:
@@ -34,7 +34,7 @@ class EnergyEstimator:
 
   # main func;
   def estimate(self):
-    #self.parse_vanilla_stat()
+    self.parse_vanilla_stat()
     self.parse_router_stat()
     self.report()
     return
@@ -124,7 +124,7 @@ class EnergyEstimator:
                   "instr_jal", "instr_jalr"]:
       self.core_energy += 11.542 * count
     # ALU;
-    elif key in ["instr_add", "instr_sub", "instr_or", "instr_and", "instr_sll"]:
+    elif key in ["instr_add", "instr_sub", "instr_or", "instr_and", "instr_sll", "instr_xori"]:
       self.core_energy += 8.93 * count
     # alu immediate;
     elif key in ["instr_slli", "instr_addi", "instr_lui", "instr_andi", "instr_srli", "instr_srai"]:
@@ -216,34 +216,43 @@ class EnergyEstimator:
         ruche_hor_count += utilized
       elif output_dir in [7,8]:
         ruche_ver_count += utilized
-
+    
+    print(hor_count)
+    print(ver_count)
+    print(ruche_hor_count)
+    print(ruche_ver_count)
+  
     # calculate router energy;
     if self.network_type == "mesh":
-      self.router_energy  = hor_count * 1.84
-      self.router_energy += ver_count * 1.96
+      self.router_energy  = hor_count * 1.49
+      self.router_energy += ver_count * 1.63
     elif self.network_type == "hruche":
       if self.depop == 1:
-        self.router_energy  = hor_count * 2.06
-        self.router_energy += ver_count * 2.27
-        self.router_energy += ruche_hor_count * 1.79 
+        self.router_energy  = hor_count * 1.50
+        self.router_energy += ver_count * 1.72
+        self.router_energy += ruche_hor_count * 1.22 
       else:
-        self.router_energy  = hor_count * 2.24
-        self.router_energy += ver_count * 2.33
-        self.router_energy += ruche_hor_count * 2.09
+        self.router_energy  = hor_count * 1.67
+        self.router_energy += ver_count * 1.80
+        self.router_energy += ruche_hor_count * 1.51
     elif self.network_type == "fruche":
       if self.depop == 1:
-        self.router_energy  = hor_count * 2.46
-        self.router_energy += ver_count * 2.61
-        self.router_energy += ruche_hor_count * 2.21
-        self.router_energy += ruche_ver_count * 2.28
+        self.router_energy  = hor_count * 1.66
+        self.router_energy += ver_count * 1.82
+        self.router_energy += ruche_hor_count * 1.40
+        self.router_energy += ruche_ver_count * 1.49
       else:
-        self.router_energy  = hor_count * 2.75
-        self.router_energy += ver_count * 2.72
-        self.router_energy += ruche_hor_count * 2.61 
-        self.router_energy += ruche_ver_count * 2.53
+        self.router_energy  = hor_count * 1.95
+        self.router_energy += ver_count * 2.01
+        self.router_energy += ruche_hor_count * 1.81
+        self.router_energy += ruche_ver_count * 2.00
     elif self.network_type == "torus":
-      self.router_energy  = hor_count * 3.10
-      self.router_energy += ver_count * 4.03
+      self.router_energy  = hor_count * 2.41
+      self.router_energy += ver_count * 3.35
+    elif self.network_type == "half_torus":
+      self.router_energy  = hor_count * 1.98
+      self.router_energy += ver_count * 2.52
+      
   
 
     # calculate wire energy;
@@ -251,21 +260,58 @@ class EnergyEstimator:
       self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.96
     elif self.network_type == "fruche":
       self.wire_energy = ruche_hor_count * (self.rf_x-1) * 0.96
-      self.wire_energy = ruche_ver_count * (self.rf_x-1) * 0.96
+      self.wire_energy += ruche_ver_count * (self.rf_x-1) * 0.96
     elif self.network_type == "torus":
-      self.wire_energy = hor_count * (self.rf_x-1) * 0.96
-      self.wire_energy = ver_count * (self.rf_x-1) * 0.96
+      self.wire_energy = hor_count * 0.96
+      self.wire_energy += ver_count * 0.96
+    elif self.network_type == "half_torus":
+      self.wire_energy = hor_count * 0.96
+      #self.wire_energy += ver_count * 0.96
   
     return
 
 
   # report text;
   def report(self):
-    #print("core_energy    (uJ) = {:.2f}".format(self.core_energy / 1000000))
-    #print("stall_energy   (uJ) = {:.2f}".format(self.stall_energy / 1000000))
+    #print(self.core_energy)
+    #print(self.stall_energy)
+    print("core_energy    (uJ) = {:.2f}".format(self.core_energy / 1000000))
+    print("stall_energy   (uJ) = {:.2f}".format(self.stall_energy / 1000000))
     print("router_energy  (uJ) = {:.2f}".format(self.router_energy / 1000000))
     print("wire_energy    (uJ) = {:.2f}".format(self.wire_energy / 1000000))
     return
+
+
+
+bpaths = {
+  "jacobi": "jacobi/nx_64__ny_64__nz_512__warm-cache_no/",
+  "fft128": "fft/128/num-iter_8__warm-cache_no/",
+  "fft256": "fft/256_larger_pod/num-iter_2__warm-cache_no/",
+#  "sgemm" : "sgemm/N_512__NITER_1/",
+  "bh_16k": "barnes_hut/nbodies_16384__pod-id_0/",
+#  "bh_32k": "barnes_hut/nbodies_32768__pod-id_0/",
+#  "bh_64k": "barnes_hut/nbodies_65536__pod-id_0/",
+
+  "bfs_pk": "bfs/graph_soc-Pokec__niter_4__pod-id_0/",
+  "bfs_hw": "bfs/graph_hollywood-2009__niter_2__pod-id_0/",
+  "bfs_lj": "bfs/graph_ljournal-2008__niter_4__pod-id_0/",
+  "bfs_ca": "bfs/graph_roadNet-CA__niter_131__pod-id_0/",
+  "bfs_us": "bfs/graph_road-usa__niter_968__pod-id_0/",
+  "bfs_rc": "bfs/graph_road-central__niter_1625__pod-id_0/",
+
+#  "pr_hw" : "pagerank/graph_hollywood-2009__pod-id_0/",
+#  "pr_lj" : "pagerank/graph_ljournal-2008__pod-id_0/",
+  "pr_pk" : "pagerank/graph_soc-Pokec__pod-id_0/",
+  "pr_ca" : "pagerank/graph_roadNet-CA__pod-id_0/",
+  "pr_rc" : "pagerank/graph_road-central__pod-id_0/",
+  "pr_us" : "pagerank/graph_road-usa__pod-id_0/",
+
+#  "spgemm_os" : "spgemm/graph_offshore__pod-id_0/",
+#  "spgemm_ca" : "spgemm/graph_roadNet-CA__pod-id_0/",
+#  "spgemm_rc" : "spgemm/graph_road-central__pod-id_0/",
+#   "memcpy" : "memcpy/tile-x_32__tile-y_16__buffer-size_16384__warm-cache_no/",
+}
+
 
 
 # main();
@@ -273,6 +319,9 @@ if __name__ == "__main__":
   network_type = sys.argv[1]
   rf_x  = int(sys.argv[2])
   depop = int(sys.argv[3])
-  bpath = sys.argv[4] 
-  ee = EnergyEstimator(network_type, rf_x, depop, bpath)
-  ee.estimate()
+  apppath = sys.argv[4] 
+  for key in bpaths.keys():
+    print(key)
+    bpath = apppath + "/" + bpaths[key]
+    ee = EnergyEstimator(network_type, rf_x, depop, bpath)
+    ee.estimate()
